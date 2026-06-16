@@ -1,0 +1,805 @@
+{% if block.settings.selectDesign == 'design1' %}
+  <style>
+
+  
+
+.mx_poweredby_solnix {
+      position: absolute;
+    top: -24px;
+    /* right: 3px; */
+    font-size: 11px;
+  
+   
+    display: none;
+    animation: fadeInOut 2s infinite alternate;
+    /* padding-right: 17px; */
+    background: #cccccc;
+    /* margin-right: 10px; */
+    padding: 5px 13px;
+    color: black;
+    font-weight: 900;
+    font-size: 18px;
+    border-radius: 8px;
+   border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px; 
+    width: 100%;
+    text-align: center;
+    left: 0;
+
+}
+
+
+
+        .mx_floating_elpySv {
+              position: fixed;
+              bottom: -100%;
+              z-index: 999;
+
+              background:white;
+       
+              width: 100%;
+              padding: 8px 16px;
+              height: 72px;
+            
+          }
+
+          .mx_floating_viewcart-box {
+              display: flex;
+             -webkit-box-pack: justify;
+              justify-content: space-between;
+              -webkit-box-align: center;
+              align-items: center;
+              font-size: 1.2rem;
+              font-weight: 400;
+              line-height: 1.2em;
+              letter-spacing: 0px;
+              padding: 2px 5px;
+              width: 100%;
+                background-color:black;
+                  color: white;
+             
+              border-radius: 8px;
+              height: 56px;
+              cursor:pointer;
+              position:relative;
+          }
+
+      .mx_floating_elpySv .mx_floating_flexview {
+          display: flex
+      ;
+          -webkit-box-align: center;
+          align-items: center;
+          gap:10px;
+      }
+
+      .mx_floating_bdcKJE {
+          font-size: 14px;
+          font-weight: 600;
+          border: none;
+          background: none;
+          color:white;
+  
+      }
+      .mx_floating_price{
+        color:white;
+
+
+      }
+      .mx_custome_underline{
+      text-decoration:none;
+    cursor:pointer;}
+      .mx_floating_cartIcons svg path{
+        fill:white;
+      }
+    .mx_custom_show{
+        display:block;
+    }
+    .mx_custom_hide{
+        display:none;
+    }
+    .activeCompareBar{
+    bottom:0%}
+    @media(max-width:769px){
+      .mx_floating_elpySv{
+    left: 0px;
+
+    }
+  }
+    @media(min-width:769px){
+      .mx_floating_elpySv{
+        max-width: 220px;
+        right: 2px;
+        background:transparent;
+}
+
+.mx_poweredby_solnix {
+ 
+    padding: 5px 8px;
+ 
+  
+}
+  
+
+
+.mx_floating_elpySv {
+  {% if block.settings.desktop_show_cart_box_ %}
+    display: block;
+  {% else %}
+    display: none;
+  {% endif %}
+}
+  }
+
+  
+  </style>
+ 
+    <div class="mx_floating_sc-hSdWYo   mx_desing_Select_1 mx_floating_elpySv mx_floating_btn   " data-shop="{{ shopUrl }}">
+
+      <div class="mx_floating_viewcart-box" onclick="clickCartLink()">
+        <div class="mx_poweredby_solnix">Free plan</div>
+
+        <div class="mx_floating_flexview">
+          <div class="mx_floating_cartIcons">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M2.39999 2.24274C1.98578 2.24274 1.64999 2.57852 1.64999 2.99274C1.64999 3.40695 1.98578 3.74274 2.39999 3.74274V2.24274ZM4.69253 2.99274L5.41645 2.79668C5.32791 2.46975 5.03124 2.24274 4.69253 2.24274V2.99274ZM8.4179 16.748L7.69398 16.944C7.79169 17.3048 8.14008 17.5385 8.51093 17.4922L8.4179 16.748ZM19.8806 15.3151L19.9736 16.0593C20.2921 16.0195 20.55 15.7814 20.615 15.4671L19.8806 15.3151ZM21.6 7.00468L22.3344 7.15663C22.3801 6.93575 22.324 6.70602 22.1816 6.53111C22.0391 6.3562 21.8256 6.25468 21.6 6.25468V7.00468ZM5.7791 7.00468L5.05518 7.20074L5.7791 7.00468ZM2.39999 3.74274H4.69253V2.24274H2.39999V3.74274ZM8.51093 17.4922L19.9736 16.0593L19.7876 14.5709L8.32488 16.0038L8.51093 17.4922ZM20.615 15.4671L22.3344 7.15663L20.8655 6.85272L19.1461 15.1632L20.615 15.4671ZM3.96861 3.1888L5.05518 7.20074L6.50302 6.80862L5.41645 2.79668L3.96861 3.1888ZM5.05518 7.20074L7.69398 16.944L9.14182 16.5519L6.50302 6.80862L5.05518 7.20074ZM21.6 6.25468H5.7791V7.75468H21.6V6.25468ZM11.25 20.5C11.25 20.9142 10.9142 21.25 10.5 21.25V22.75C11.7426 22.75 12.75 21.7427 12.75 20.5H11.25ZM10.5 21.25C10.0858 21.25 9.74999 20.9142 9.74999 20.5H8.24999C8.24999 21.7427 9.25735 22.75 10.5 22.75V21.25ZM9.74999 20.5C9.74999 20.0858 10.0858 19.75 10.5 19.75V18.25C9.25735 18.25 8.24999 19.2574 8.24999 20.5H9.74999ZM10.5 19.75C10.9142 19.75 11.25 20.0858 11.25 20.5H12.75C12.75 19.2574 11.7426 18.25 10.5 18.25V19.75ZM19.25 20.5C19.25 20.9142 18.9142 21.25 18.5 21.25V22.75C19.7426 22.75 20.75 21.7427 20.75 20.5H19.25ZM18.5 21.25C18.0858 21.25 17.75 20.9142 17.75 20.5H16.25C16.25 21.7427 17.2574 22.75 18.5 22.75V21.25ZM17.75 20.5C17.75 20.0858 18.0858 19.75 18.5 19.75V18.25C17.2574 18.25 16.25 19.2574 16.25 20.5H17.75ZM18.5 19.75C18.9142 19.75 19.25 20.0858 19.25 20.5H20.75C20.75 19.2574 19.7426 18.25 18.5 18.25V19.75Z" ></path>
+            </svg>
+          </div>
+          <div class="mx_floating_cartData">
+            <div class="mx_floating_sc-iAyFgw mx_floating_dIWcMN">
+              <div>
+                <span class="mx_floating_stickycartcount" style="font-weight:bold;">{{ cart.item_count }}</span>
+                <span class="mx_floating_stickycartcounttext">{{ 'ratings.defaultProperty.show' | t }}</span>
+              </div>
+              <div class="mx_floating_price">
+                <span class="mx_floating_stickycartprice" style="font-weight:bold;">
+                  {{- cart.items_subtotal_price | money_with_currency -}}
+                </span>
+              </div>
+              <!-- <span class="tax">Tax Included</span> -->
+            </div>
+          </div>
+        </div>
+        <a class="mx_custome_underline openDrawer openPopup mxopenCartPage" id="">
+          <button class="mx_floating_sc-eHgmQL mx_floating_bdcKJE mx_floating_flexview mx_floating_mx_show_cart">
+            <div style="display: flex; cursor:pointer; justify-content: center; align-items: center;">
+              {{ 'ratings.defaultProperty.cart' | t }}
+            </div>
+          </button>
+        </a>
+      </div>
+    </div>
+  
+ 
+{% endif %}
+
+{% if block.settings.selectDesign == 'design2' %}
+  <style>
+        .mx_floating_elpySv {
+          position: fixed;
+          bottom: -2000px;
+          right: 20px;
+          background:white;
+ 
+          border-radius: 50%;
+
+          width: 60px;
+          height: 60px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+          z-index: 999;
+          transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+          box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Initial shadow */
+        }
+
+        .mx_floating_elpySv:hover {
+          transform: scale(1.1);
+          box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3); /* Enhanced shadow on hover */
+        }
+
+        .mx_custome_underline svg {
+          width: 24px;
+          height: 24px;
+          cursor:pointer;
+     
+        }
+
+        .mx_floating_stickycartcount {
+          position: absolute;
+          top: -20px;
+          right: -18px;
+background:black;
+color:white;
+ 
+          font-size: 12px;
+          font-weight: bold;
+
+          width: 20px; /* Ensures a perfect circle */
+          height: 20px; /* Ensures a perfect circle */
+          line-height: 20px; /* Centers text inside */
+          border-radius: 50%; /* Makes it a circle */
+
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          text-align: center;
+        }
+
+        .mx_floating_viewcart-box {
+          position: relative;
+        }
+
+        .mx_floating_price {
+          position: absolute;
+          bottom: -21px;
+          left: 50%;
+          transform: translateX(-50%);
+          background:black;
+          color:white;
+     
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 10px;
+          font-weight: bold;
+
+          box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
+
+
+        }
+        .mx_floating_viewcart-box a {
+        cursor:pointer !important;
+      }
+
+
+        .mx_custom_show{
+          display:block;
+      }
+
+      .activeCompareBar{
+      bottom:10%
+    }
+    @media(min-width:769px){
+   .mx_floating_elpySv {
+  {% if block.settings.desktop_show_cart_box_ %}
+    display: flex;
+  {% else %}
+    display: none;
+  {% endif %}
+}
+  }
+  </style>
+
+    <div class="mx_floating_sc-hSdWYo mx_floating_elpySv mx_design_2_hideplan mx_floating_btn " onclick="clickCartLink()"  data-shop="{{ shopUrl}}">
+      <div class="mx_floating_viewcart-box mx_desin_background">
+        <div class="mx_floating_flexview">
+          <div class="mx_floating_cartData">
+            <div class="mx_floating_sc-iAyFgw mx_floating_dIWcMN">
+              <span class="mx_floating_stickycartcount" style="font-weight:bold;">{{ cart.item_count }}</span>
+
+              <!-- <span class="tax">Tax Included</span> -->
+            </div>
+          </div>
+        </div>
+        <a class="mx_custome_underline openDrawer openPopup mxopenCartPage">
+          <svg
+            class="qsc2-svg-icon qsc2-svg--cart-icon-bag-1 qsc2-svg-icon--md qsc2-stickybtn__icon"
+           aria-hidden="true" fill="none" focusable="false"  viewBox="0 0 24 24"><path d="M4.75 8.25A.75.75 0 0 0 4 9L3 19.125c0 1.418 1.207 2.625 2.625 2.625h12.75c1.418 0 2.625-1.149 2.625-2.566L20 9a.75.75 0 0 0-.75-.75H4.75Zm2.75 0v-1.5a4.5 4.5 0 0 1 4.5-4.5v0a4.5 4.5 0 0 1 4.5 4.5v1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </a>
+      </div>
+      <div class="mx_floating_price">
+        <span class="mx_floating_stickycartprice">
+          {{- cart.items_subtotal_price | money_with_currency -}}
+        </span>
+      </div>
+    </div>
+  {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  let plan = "free"; // default plan
+
+  const floatingWrapper = document.querySelector('.mx_floating_elpySv');
+    const poweredBy = document.querySelector('.mx_poweredby_solnix');
+  if (floatingWrapper) {
+    floatingWrapper.style.visibility = "hidden"; // hide until logic done
+  }
+
+  // ✅ Always run API check
+  try {
+    const shopUrl = "{{ shop.url }}";
+    const shop = shopUrl.replace(/^https?:\/\//, "");
+    
+    const res = await fetch(`/apps/floating-cart/hasSubscription?shop=${shop}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.tier) {
+        plan = data.tier;
+      }
+    }
+  } catch (err) {
+    console.warn("⚠️ Subscription check failed, defaulting to free", err);
+  }
+
+  // ✅ This will now always run
+  console.log("🎯 Final Plan find:", plan);
+
+  // Apply logic only if wrapper exists
+  if (floatingWrapper) {
+    const floating_bar = document.querySelector('.mx_floating_viewcart-box');
+    const viewCart = document.querySelector('.mx_floating_bdcKJE');
+    const desing2icontransparent = document.querySelector('.mx_desin_background');
+    const cartIconPath = document.querySelector('.mx_design_2_hideplan .mx_floating_cartIcons svg path');
+    const cartIconPathdesing1 = document.querySelector('.mx_desing_Select_1 .mx_floating_cartIcons svg path');
+
+    const design2Btn = floatingWrapper.classList.contains('mx_design_2_hideplan') ? floatingWrapper : null;
+    const priceEl2 = floatingWrapper.querySelector('.mx_floating_stickycartprice');
+    const unlimited_desing_2plan = floatingWrapper.querySelector('.mx_design_2_hideplan .mx_floating_price');
+    const desing2Stickycartcount = document.querySelector('.mx_design_2_hideplan .mx_floating_stickycartcount');
+
+    // Handle visibility per plan
+    if (plan === 'free') {
+      if (priceEl2) priceEl2.style.display = 'none';
+      if (design2Btn) design2Btn.style.display = 'none';
+       // Show/hide powered by text every 2s
+
+    if (poweredBy) {
+      poweredBy.style.display = 'block';
+      poweredBy.style.visibility = 'visible';
+  
+    }
+   if (floating_bar) {
+  floating_bar.style.borderTopLeftRadius = '0';
+  floating_bar.style.borderTopRightRadius = '0';
+}
+
+
+    } else if (plan === 'premium') {
+      if (priceEl2) priceEl2.style.display = 'none';
+      if (design2Btn) design2Btn.style.display = 'none';
+          if (poweredBy) {
+      poweredBy.style.display = 'none';
+      poweredBy.style.visibility = 'hidden';
+    }
+
+       if (floating_bar) {
+  floating_bar.style.borderTopLeftRadius = '8';
+  floating_bar.style.borderTopRightRadius = '8';
+}
+    } else if (plan === 'unlimited') {
+      if (priceEl2) priceEl2.style.display = 'block';
+      if (design2Btn) design2Btn.style.display = 'flex';
+        if (poweredBy) {
+      poweredBy.style.display = 'none';
+      poweredBy.style.visibility = 'hidden';
+    }
+           if (floating_bar) {
+  floating_bar.style.borderTopLeftRadius = '8';
+  floating_bar.style.borderTopRightRadius = '8';
+}
+    }
+
+    // Apply color settings
+    if (plan === 'premium' || plan === 'unlimited') {
+      floatingWrapper.style.background = '{{ block.settings.Wrapper_bg_color }}';
+      floatingWrapper.style.color = '{{ block.settings.text_color }}';
+
+      if (floating_bar) {
+        floating_bar.style.background = '{{ block.settings.bg_color }}';
+        floating_bar.style.color = '{{ block.settings.text_color }}';
+      }
+
+      if (viewCart) viewCart.style.color = '{{ block.settings.text_color }}';
+      if (cartIconPath) cartIconPath.style.fill = '{{ block.settings.bg_color }}';
+      if (priceEl2) priceEl2.style.color = '{{ block.settings.text_color }}';
+      if (cartIconPathdesing1) cartIconPathdesing1.style.fill = '{{ block.settings.text_color }}';
+      if (desing2icontransparent) desing2icontransparent.style.background = "unset";
+      if (desing2icontransparent) desing2icontransparent.style.color = '{{ block.settings.bg_color }}';
+      if (unlimited_desing_2plan) unlimited_desing_2plan.style.background = '{{ block.settings.bg_color }}';
+      if (desing2Stickycartcount) desing2Stickycartcount.style.background = '{{ block.settings.bg_color }}';
+      if (desing2Stickycartcount) desing2Stickycartcount.style.color = '{{ block.settings.text_color }}';
+    }
+
+    // Finally show wrapper
+    floatingWrapper.style.visibility = "visible";
+  }
+});
+</script>
+
+
+
+<script>
+  const addItmes = document.querySelector('.mx_floating_stickycartcount');
+  const totalprice = document.querySelector('.mx_floating_stickycartprice');
+  const showCart = document.querySelector('.mx_floating_mx_show_cart');
+  const floating_btn = document.querySelector('.mx_floating_elpySv ');
+  const showHideInterval= document.querySelector(' .mx_floating_price ')
+//function open cartlink
+  function clickCartLink() {
+    // Get the custom selector from Shopify settings
+
+    let cartSelector = '{{ block.settings.view_cart_Page }}'.trim();
+    // Find the anchor element with href="/cart"
+    const cartLink = document.querySelector('a[href="/cart"]');
+
+    // Check if the element exists
+    if (cartLink) {
+      // Click the element
+      cartLink.click();
+    } // Check if cartSelector is valid and query the element
+    else if (cartSelector) {
+      let customCartIcon = document.querySelector(cartSelector);
+      if (customCartIcon) {
+        customCartIcon.click();
+      }
+    } else {
+      // If no element with the custom selector exists, redirect to the cart page
+      window.location.href = '/cart';
+    }
+  }
+
+  // Attach the function to the "Add to Cart" button
+  {% comment %} const addToCartButton = document.querySelector('.mxopenCartPage'); // Replace with the actual button selector
+  if (addToCartButton) {
+    addToCartButton.addEventListener('click', clickCartLink);
+  } {% endcomment %}
+
+  //end cart open functionality //
+
+  function updateCartCount() {
+    fetch('/cart.js')
+      .then((response) => response.json())
+      .then((cart) => {
+        const cartCount = cart.item_count;
+        const totalAmount = cart.items_subtotal_price;
+        const currencyMapping = {
+          AED: 'ar-AE',
+          AFN: 'fa-AF',
+          ALL: 'sq-AL',
+          AMD: 'hy-AM',
+          ANG: 'nl-NL',
+          AOA: 'pt-AO',
+          ARS: 'es-AR',
+          AUD: 'en-AU',
+          AWG: 'nl-AW',
+          AZN: 'az-Latn-AZ',
+          BAM: 'bs-BA',
+          BBD: 'en-BB',
+          BDT: 'bn-BD',
+          BGN: 'bg-BG',
+          BHD: 'ar-BH',
+          BIF: 'fr-BI',
+          BMD: 'en-BM',
+          BND: 'ms-BN',
+          BOB: 'es-BO',
+          BRL: 'pt-BR',
+          BSD: 'en-BS',
+          BTN: 'dz-BT',
+          BWP: 'en-BW',
+          BYN: 'be-BY',
+          BZD: 'en-BZ',
+          CAD: 'en-CA',
+          CDF: 'fr-CD',
+          CHF: 'de-CH',
+          CLP: 'es-CL',
+          CNY: 'zh-CN',
+          COP: 'es-CO',
+          CRC: 'es-CR',
+          CUC: 'es-EC', // Convertible Peso (Ecuador)
+          CUP: 'es-CU',
+          CVE: 'pt-CV',
+          CZK: 'cs-CZ',
+          DJF: 'ar-DJ',
+          DKK: 'da-DK',
+          DOP: 'es-DO',
+          DZD: 'ar-DZ',
+          EGP: 'ar-EG',
+          ERN: 'ar-ER',
+          ETB: 'am-ET',
+          EUR: 'de-DE', // Default locale for Euro
+          FJD: 'en-FJ',
+          FKP: 'en-FK',
+          FOK: 'fo-FO',
+          GBP: 'en-GB',
+          GEL: 'ka-GE',
+          GGP: 'en-GG',
+          GHS: 'en-GH',
+          GIP: 'en-GI',
+          GMD: 'en-GM',
+          GNF: 'fr-GN',
+          GTQ: 'es-GT',
+          GYD: 'en-GY',
+          HKD: 'zh-HK',
+          HNL: 'es-HN',
+          HRK: 'hr-HR',
+          HTG: 'fr-HT',
+          HUF: 'hu-HU',
+          IDR: 'id-ID',
+          ILS: 'he-IL',
+          IMP: 'en-IM',
+          INR: 'en-IN',
+          IQD: 'ar-IQ',
+          IRR: 'fa-IR',
+          ISK: 'is-IS',
+          JEP: 'en-JE',
+          JMD: 'en-JM',
+          JOD: 'ar-JO',
+          JPY: 'ja-JP',
+          KES: 'en-KE',
+          KGS: 'ky-KG',
+          KHR: 'km-KH',
+          KID: 'en-KI',
+          KMF: 'ar-KM',
+          KRW: 'ko-KR',
+          KWD: 'ar-KW',
+          KYD: 'en-KY',
+          KZT: 'kk-KZ',
+          LAK: 'lo-LA',
+          LBP: 'ar-LB',
+          LKR: 'si-LK',
+          LRD: 'en-LR',
+          LSL: 'en-LS',
+          LYD: 'ar-LY',
+          MAD: 'ar-MA',
+          MDL: 'ro-MD',
+          MGA: 'fr-MG',
+          MKD: 'mk-MK',
+          MMK: 'my-MM',
+          MNT: 'mn-MN',
+          MOP: 'zh-MO',
+          MRU: 'ar-MR',
+          MUR: 'en-MU',
+          MVR: 'dv-MV',
+          MWK: 'en-MW',
+          MXN: 'es-MX',
+          MYR: 'ms-MY',
+          MZN: 'pt-MZ',
+          NAD: 'en-NA',
+          NGN: 'en-NG',
+          NIO: 'es-NI',
+          NOK: 'nb-NO',
+          NPR: 'ne-NP',
+          NZD: 'en-NZ',
+          OMR: 'ar-OM',
+          PAB: 'es-PA',
+          PEN: 'es-PE',
+          PGK: 'en-PG',
+          PHP: 'en-PH',
+          PKR: 'en-PK',
+          PLN: 'pl-PL',
+          PYG: 'es-PY',
+          QAR: 'ar-QA',
+          RON: 'ro-RO',
+          RSD: 'sr-RS',
+          RUB: 'ru-RU',
+          RWF: 'fr-RW',
+          SAR: 'ar-SA',
+          SBD: 'en-SB',
+          SCR: 'en-SC',
+          SDG: 'ar-SD',
+          SEK: 'sv-SE',
+          SGD: 'en-SG',
+          SHP: 'en-SH',
+          SLL: 'en-SL',
+          SOS: 'so-SO',
+          SRD: 'nl-SR',
+          SSP: 'en-SS',
+          STN: 'pt-ST',
+          SYP: 'ar-SY',
+          SZL: 'en-SZ',
+          THB: 'th-TH',
+          TJS: 'tg-TJ',
+          TMT: 'tk-TM',
+          TND: 'ar-TN',
+          TOP: 'to-TO',
+          TRY: 'tr-TR',
+          TTD: 'en-TT',
+          TVD: 'en-TV',
+          TWD: 'zh-TW',
+          TZS: 'sw-TZ',
+          UAH: 'uk-UA',
+          UGX: 'en-UG',
+          USD: 'en-US',
+          UYU: 'es-UY',
+          UZS: 'uz-UZ',
+          VES: 'es-VE',
+          VND: 'vi-VN',
+          VUV: 'en-VU',
+          WST: 'en-WS',
+          XAF: 'fr-CM', // Used in parts of Central Africa
+          XCD: 'en-AG',
+          XOF: 'fr-BF',
+          XPF: 'fr-PF',
+          YER: 'ar-YE',
+          ZAR: 'en-ZA',
+          ZMW: 'en-ZM',
+          ZWL: 'en-ZW',
+        };
+
+        // Example: A function to format a number using the mapping:
+        function formatCurrency(amount, currency) {
+          const locale = currencyMapping[currency] || 'en-IN'; // Default if currency code not found
+          try {
+            return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+          } catch (error) {
+            return `Error formatting currency: ${currency}`;
+          }
+        }
+
+        const currentCurrency = Shopify.currency.active;
+        
+
+        console.log(currentCurrency + ' store currency');
+        console.log(cartCount + 'cart');
+        if (cartCount > 0) {
+          floating_btn.classList.add('activeCompareBar');
+        } else {
+          floating_btn.classList.remove('activeCompareBar');
+        }
+        if (addItmes && totalprice) {
+          addItmes.textContent = cartCount;
+
+          totalprice.textContent = formatCurrency(totalAmount / 100, currentCurrency);
+        }
+
+           // Add .mx_custam_show class to showHideInterval
+     {% comment %} if (showHideInterval) {
+        showHideInterval.classList.add('mx_custom_show');
+
+        // Remove the class after 2 seconds
+        setTimeout(() => {
+          showHideInterval.classList.remove('mx_custom_show');
+        }, 6000);
+      }  {% endcomment %}
+
+
+
+
+      })
+      .catch((error) => console.error('Error fetching cart data:', error));
+  }
+
+  if (addItmes) {
+    console.log(addItmes + 'sdfghjk');
+    // 1️⃣ Detect Form Submission for ATC
+    document.body.addEventListener('submit', (event) => {
+      if (event.target.matches('form[action="/cart/add"]')) {
+        console.log('ATC happened on form submit.');
+        updateCartCount();
+      }
+    });
+
+    // 2️⃣ Detect Clicks on ATC Buttons (Works Even for Dynamically Added Buttons)
+    document.body.addEventListener('click', (event) => {
+      if (event.target.matches('button[data-action="add-to-cart"], input[name="add"]')) {
+        console.log('ATC happened on button click.');
+        updateCartCount();
+      }
+    });
+
+    // 3️⃣ Intercept Fetch API Calls (Detects AJAX ATC & Quantity Updates)
+    (function () {
+      const originalFetch = window.fetch;
+      window.fetch = function (...args) {
+        return originalFetch.apply(this, args).then((response) => {
+          if (args[0].includes('/cart/add') || args[0].includes('/cart/update') || args[0].includes('/cart/change')) {
+            console.log('ATC detected via Fetch API.');
+            updateCartCount();
+          }
+          return response;
+        });
+      };
+    })();
+
+    // 4️⃣ Intercept XHR Requests (Detects jQuery-Based AJAX ATC)
+    (function (open) {
+      XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
+        this.addEventListener(
+          'readystatechange',
+          function () {
+            if (this.readyState === 4 && url.includes('/cart/') && method.toUpperCase() === 'POST') {
+              console.log('ATC detected via XMLHttpRequest.');
+              updateCartCount();
+            }
+          },
+          false
+        );
+        open.call(this, method, url, async, user, pass);
+      };
+    })(XMLHttpRequest.prototype.open);
+
+    // 5️⃣ Detect Quantity Changes (Handles Plus/Minus Buttons & Manual Edits)
+    const observer = new MutationObserver(() => {
+      document.querySelectorAll("input[name='quantity'], .quantity-selector").forEach((input) => {
+        if (!input.hasAttribute('data-listener')) {
+          input.setAttribute('data-listener', 'true');
+          input.addEventListener('change', () => {
+            console.log('Cart quantity changed.');
+            updateCartCount();
+          });
+        }
+      });
+    });
+    updateCartCount();
+    // Observe body for cart updates
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+
+
+</script>
+{% schema %}
+{
+  "name": "FloatCart",
+  "target": "body",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Apps Settings "
+    },
+    {
+  "type": "header",
+  "content": "Plan Information",
+  "info": " This customization setting is available on Basic and Premium plans. Design 2 floating button works only with Premium plan."
+},
+  
+    {
+      "type": "select",
+      "id": "selectDesign",
+      "label": "Select Design",
+      "options": [
+        {
+          "value": "design1",
+          "label": "Bar"
+        },
+        {
+          "value": "design2",
+          "label": "Button"
+        }
+      ],
+      "default": "design1"
+    },
+    {
+      "type": "checkbox",
+      "id": "desktop_show_cart_box_",
+      "label": "Enable Desktop Visibility",
+      "default": true
+    },
+    {
+      "type": "color",
+      "id": "Wrapper_bg_color",
+      "label": "Wrapper Button Background Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Floating Button Background Color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Floating Button Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Additional Apps Settings",
+      "info": "If the cart drawer does not open, set a unique ID or class manually (e.g., #cart or .open-cart)."
+
+    },
+    {
+      "type": "text",
+      "id": "view_cart_Page",
+      "label": "Unique ID or class to open cart on 'View Cart' click",
+      "default": ".cart-drawer-toggle"
+    }
+  ]
+}
+{% endschema %}

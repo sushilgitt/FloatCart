@@ -1,0 +1,14 @@
+{
+    "ratings": {
+      "stars": {
+        "label": "Arvostelut"
+      },
+      "home": {
+        "recommendationText": "Suositeltu Tuote!"
+      },
+      "defaultProperty": {
+        "cart": "NÄYTÄ OSTOSKORI",
+        "show": "Tuotteet"
+      }
+    }
+  }

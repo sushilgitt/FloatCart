@@ -1,0 +1,32 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+# client_id is populated by `shopify app config link` when you create/link the new app
+name = "FloatCart"
+application_url = "https://REPLACE_WITH_NEW_APP_URL"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = false
+
+[webhooks]
+api_version = "2026-04"
+
+  [[webhooks.subscriptions]]
+  uri = "https://REPLACE_WITH_NEW_APP_URL/api/webhooks"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+
+[access_scopes]
+scopes = "write_cart_transforms,write_draft_orders,write_products"
+
+[auth]
+redirect_urls = [
+  "https://REPLACE_WITH_NEW_APP_URL/api/auth/callback"
+]
+
+[app_proxy]
+url = "https://REPLACE_WITH_NEW_APP_URL/api/floating-cart"
+subpath = "floating-cart"
+prefix = "apps"
+
+[pos]
+embedded = false

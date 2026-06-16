@@ -1,0 +1,14 @@
+{
+    "ratings": {
+      "stars": {
+        "label": "Oceny"
+      },
+      "home": {
+        "recommendationText": "Polecany Produkt!"
+      },
+      "defaultProperty": {
+        "cart": "ZOBACZ KOSZYK",
+        "show": "Przedmioty"
+      }
+    }
+  }

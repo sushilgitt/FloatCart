@@ -1,0 +1,14 @@
+{
+    "ratings": {
+      "stars": {
+        "label": "Betyg"
+      },
+      "home": {
+        "recommendationText": "Rekommenderad Produkt!"
+      },
+      "defaultProperty": {
+        "cart": "VISA VARUKORG",
+        "show": "Artiklar"
+      }
+    }
+  }

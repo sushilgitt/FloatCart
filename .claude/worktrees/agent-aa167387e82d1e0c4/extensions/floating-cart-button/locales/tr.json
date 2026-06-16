@@ -1,0 +1,14 @@
+{
+    "ratings": {
+      "stars": {
+        "label": "Değerlendirmeler"
+      },
+      "home": {
+        "recommendationText": "Önerilen Ürün!"
+      },
+      "defaultProperty": {
+        "cart": "SEPETİ GÖRÜNTÜLE",
+        "show": "Öğeler"
+      }
+    }
+  }

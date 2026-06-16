@@ -1,0 +1,15 @@
+{
+    "ratings": {
+      "stars": {
+        "label": "Beoordelingen"
+      },
+      "home": {
+        "recommendationText": "Aanbevolen product!"
+      },
+      "defaultProperty": {
+        "cart": "BEKIJK WINKELWAGEN",
+        "show": "Artikelen"
+      }
+    }
+  }
+  

@@ -1,0 +1,14 @@
+{
+    "ratings": {
+      "stars": {
+        "label": "Đánh giá"
+      },
+      "home": {
+        "recommendationText": "Sản phẩm được đề xuất!"
+      },
+      "defaultProperty": {
+        "cart": "XEM GIỎ HÀNG",
+        "show": "Mặt hàng"
+      }
+    }
+  }

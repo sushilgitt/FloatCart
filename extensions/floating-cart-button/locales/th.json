@@ -1,0 +1,14 @@
+{
+    "ratings": {
+      "stars": {
+        "label": "การให้คะแนน"
+      },
+      "home": {
+        "recommendationText": "สินค้าแนะนำ!"
+      },
+      "defaultProperty": {
+        "cart": "ดูตะกร้า",
+        "show": "รายการ"
+      }
+    }
+  }

@@ -1,0 +1,14 @@
+{
+  "ratings": {
+    "stars": {
+      "label": "Ratings"
+    },
+    "home": {
+      "recommendationText": "Recommended Product!"
+    },
+    "defaultProperty": {
+      "cart": "VIEW CART  ",
+      "show": "Items"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "ratings": {
+      "stars": { "label": "Évaluations" },
+      "home": { "recommendationText": "Produit recommandé !" },
+      "defaultProperty": {
+        "cart": "VOIR LE PANIER",
+        "show": "Articles"
+      }
+    }
+}

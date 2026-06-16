@@ -1,0 +1,56 @@
+﻿  const redirectToPricingPlans = async () => {
+    if (isSubmitting || serverTier === "premium") return;
+    if (!shop) { setBanner({ msg: "Missing shop parameter.", status: "critical" }); return; }
+    try {
+      setIsSubmitting(true);
+      const res = await fetchAuth("/api/createSubscription");
+
+      // Let checkHeadersForReauthorization handle re-auth silently
+      if (res.status === 401 || res.status === 403) { setIsSubmitting(false); return; }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unable to generate subscription URL");
+
+      if (data.isActiveSubscription) {
+        await refreshTier();
+        setBanner({ msg: "Already on the Premium plan.", status: "success" });
+        return;
+      }
+
+      if (data.confirmationUrl) {
+        redirect.dispatch(Redirect.Action.REMOTE, data.confirmationUrl);
+      } else {
+        throw new Error("No confirmation URL returned");
+      }
+    } catch (err) {
+      setBanner({ msg: "Unable to open Shopify subscription plans.", status: "critical" });
+      setIsSubmitting(false);
+    }
+  };
+
+  const runConfirm = async () => {
+    if (isSubmitting) return;
+    const plan = confirm.target;
+    setConfirm({ open: false, target: null, title: "", message: "" });
+    try {
+      if (plan === "free") {
+        setIsSubmitting(true);
+        await fetchAuth("/api/cancelSubscription");
+        await refreshTier();
+        setBanner({ msg: "Downgraded to Free plan", status: "success" });
+      } else {
+        if (!shop) return;
+          setIsSubmitting(true);
+          const res = await fetchAuth("/api/createSubscription");
+
+          if (res.status === 401 || res.status === 403) { setIsSubmitting(false); return; }
+
+          const data = await res.json();
+          if (data.confirmationUrl) {
+            redirect.dispatch(Redirect.Action.REMOTE, data.confirmationUrl);
+          }
+      }
+    } catch (err) {
+      setBanner({ msg: "Action failed.", status: "critical" });
+    } finally { setIsSubmitting(false); }
+  };

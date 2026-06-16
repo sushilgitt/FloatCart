@@ -1,0 +1,14 @@
+{
+    "ratings": {
+      "stars": {
+        "label": "Hodnocení"
+      },
+      "home": {
+        "recommendationText": "Doporučený Produkt!"
+      },
+      "defaultProperty": {
+        "cart": "ZOBRAZIT KOŠÍK",
+        "show": "Položky"
+      }
+    }
+  }

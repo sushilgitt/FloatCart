@@ -1,0 +1,11 @@
+{
+    "ratings": {
+      "stars": { "label": "Valutazioni" },
+      "home": { "recommendationText": "Prodotto consigliato!" },
+      "defaultProperty": {
+        "cart": "VISUALIZZA CARRELLO",
+        "show": "Articoli"
+      }
+    }
+  }
+  

@@ -1,0 +1,11 @@
+{
+    "ratings": {
+      "stars": { "label": "Évaluations" },
+      "home": { "recommendationText": "Produit recommandé !" },
+      "defaultProperty": {
+        "cart": "ПОСМОТРЕТЬ КОРЗИНУ",
+        "show": "Товары"
+      }
+    }
+  }
+  
