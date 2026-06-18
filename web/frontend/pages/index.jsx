@@ -99,23 +99,9 @@ export default function HomePage() {
         }}
       >
         <div style={{ maxWidth: 760 }}>
-          <div
-            style={{
-              display: "inline-flex",
-              padding: "6px 12px",
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.12)",
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: 1,
-              textTransform: "uppercase",
-            }}
-          >
-            floating.solnix.store
-          </div>
           <h1
             style={{
-              marginTop: 16,
+              marginTop: 0,
               marginBottom: 12,
               fontSize: 38,
               lineHeight: 1.08,
