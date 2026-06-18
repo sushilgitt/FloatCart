@@ -220,8 +220,7 @@ export default function Pricing() {
             {confirm.target === "premium" ? (
               <p>
                 Premium unlocks the full storefront experience, advanced
-                customization, and product total price support for
-                `floating.solnix.store`.
+                customization, and product total price support for your store.
               </p>
             ) : (
               <p>

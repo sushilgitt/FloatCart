@@ -1,92 +1,71 @@
-import { GraphqlQueryError } from "@shopify/shopify-api";
 import shopify from "./shopify.js";
 
-
-
-let isProd;
-
-export default async function cancelSubscription(
-    session,
-    isProdOverride = process.env.isProd === "production"
-  ){
-  
-    isProd = isProdOverride;
-  
-    const subscriptionId = await getActiveSubsId(session);
-    console.log("subscriptionId:" +subscriptionId)
-    const status = await appSubscriptionCancel(session, subscriptionId);
-
-    return status;
-  
-  }
-
-
-  async function getActiveSubsId(session) {
-    const client = new shopify.api.clients.Graphql({ session });
-  
-      const currentInstallations = await client.query({
-        data: RECURRING_PURCHASES_QUERY,
-      });
-      const subscriptions =
-        currentInstallations.body.data.currentAppInstallation.activeSubscriptions;
-  
-      for (let i = 0, len = subscriptions.length; i < len; i++) {
-        console.log("subscription name: ", subscriptions[i].name);
-        console.log("Subscription Id: ",subscriptions[i].id);
-        return subscriptions[i].id;
-
-      }
-
-  }
-
-  async function appSubscriptionCancel(session, subscriptionId) {
-    const client = new shopify.api.clients.Graphql({ session });
-  
-    const mutationResponse = await client.query({
-      data: {
-        query: CANCEL_SUBSCRIPTION,
-        variables: {
-          id: subscriptionId
-        },
-      },
-    });
-
-    if (mutationResponse.body.errors && mutationResponse.body.errors.length) {
-      throw new ShopifyGraphqlClient(
-        "Error while subscription cancel",
-        mutationResponse.body.errors
-      );
-    }else{
-      console.log("Subscription canceled successfully: ", session.shop);
-      //console.log("Status: ", mutationResponse.body.data.appSubscriptionCancel.appSubscription.status);
-    }
-
-    return  mutationResponse.body.data.appSubscriptionCancel.appSubscription.status;
-
-  }
-
-  const CANCEL_SUBSCRIPTION = `
-mutation appSubscriptionCancel($id: ID!) {
-  appSubscriptionCancel(id: $id) {
-    appSubscription {
-      id
-      name
-      status
-    }
-    userErrors {
-      field
-      message
-    }
-  }
-}
-`;
-
 const RECURRING_PURCHASES_QUERY = `
-query appSubscription {
-  currentAppInstallation {
-    activeSubscriptions {
-      name, id, test
+  query appSubscriptions {
+    currentAppInstallation {
+      activeSubscriptions {
+        id
+        name
+        test
+        status
+      }
     }
   }
-}
 `;
+
+const CANCEL_SUBSCRIPTION = `
+  mutation appSubscriptionCancel($id: ID!) {
+    appSubscriptionCancel(id: $id) {
+      appSubscription {
+        id
+        name
+        status
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+async function getActiveSubscriptionId(session) {
+  const client = new shopify.api.clients.Graphql({ session });
+  // @shopify/shopify-api v11: client.request(query) -> { data, errors, extensions }
+  const response = await client.request(RECURRING_PURCHASES_QUERY);
+  const subscriptions =
+    response?.data?.currentAppInstallation?.activeSubscriptions ?? [];
+  return subscriptions.length ? subscriptions[0].id : null;
+}
+
+/**
+ * Cancels the store's active app subscription (if any).
+ * @returns {Promise<string>} the cancelled subscription status, or
+ *   "No subscription found" when there is nothing to cancel.
+ */
+export default async function cancelSubscription(session) {
+  const subscriptionId = await getActiveSubscriptionId(session);
+
+  if (!subscriptionId) {
+    return "No subscription found";
+  }
+
+  const client = new shopify.api.clients.Graphql({ session });
+  const response = await client.request(CANCEL_SUBSCRIPTION, {
+    variables: { id: subscriptionId },
+  });
+
+  const userErrors = response?.data?.appSubscriptionCancel?.userErrors ?? [];
+  if (userErrors.length) {
+    throw new Error(
+      `Failed to cancel subscription: ${userErrors
+        .map((error) => error.message)
+        .join(", ")}`
+    );
+  }
+
+  console.log("Subscription cancelled successfully:", session.shop);
+  return (
+    response?.data?.appSubscriptionCancel?.appSubscription?.status ?? "CANCELLED"
+  );
+}
