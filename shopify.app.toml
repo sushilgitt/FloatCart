@@ -6,6 +6,10 @@ embedded = true
 client_id = "9fa2579eeeae0eaae7addd77b7003f1e"
 
 [build]
+# Required so `shopify app deploy` pushes this app config (access_scopes, URLs,
+# proxy, webhooks) to the Partner Dashboard — not just extensions. Without it the
+# emptied scopes never reach Shopify and the Protected Customer Data 403 persists.
+include_config_on_deploy = true
 automatically_update_urls_on_dev = true
 
 [webhooks]
