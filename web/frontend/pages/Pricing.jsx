@@ -92,12 +92,10 @@ export default function Pricing() {
 
       setServerTier(data?.tier || "free");
     } catch (error) {
+      // The Admin API may be temporarily unavailable; default to the Free view
+      // instead of showing an alarming error so the page stays usable.
       console.error(error);
       setServerTier("free");
-      setBanner({
-        status: "critical",
-        msg: "We couldn't load your subscription status. You can still retry.",
-      });
     } finally {
       setLoading((current) => ({ ...current, page: false }));
     }
@@ -171,11 +169,11 @@ export default function Pricing() {
     } catch (error) {
       console.error(error);
       setBanner({
-        status: "critical",
+        status: "warning",
         msg:
           target === "free"
-            ? "Cancelling Premium failed."
-            : "Starting Premium billing failed.",
+            ? "We couldn't cancel Premium right now. Please try again shortly."
+            : "Billing is temporarily unavailable. Please try again shortly.",
       });
     } finally {
       setLoading((current) => ({ ...current, action: null }));

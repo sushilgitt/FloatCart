@@ -54,7 +54,7 @@ export default function HomePage() {
       }
 
       window.open(
-        `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=b355dba7-d415-49dc-8399-11206b10c9ca/floating-cart-embed`,
+        `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=b355dba7-d415-49dc-8399-11206b10c9ca/floating-button`,
         "_blank"
       );
     } catch (error) {
