@@ -191,7 +191,13 @@ app.post("/api/solnix-proxy/:event", async (req, res) => {
   }
 });
 
-app.use("/api/*", shopify.validateAuthenticatedSession());
+// Express 4 does not catch async-middleware rejections; without this wrapper a
+// Shopify API error (e.g. a 403 from hasValidAccessToken) becomes an unhandled
+// rejection that crashes the whole process. Route it to the error handler instead.
+const wrapAsync = (mw) => (req, res, next) =>
+  Promise.resolve(mw(req, res, next)).catch(next);
+
+app.use("/api/*", wrapAsync(shopify.validateAuthenticatedSession()));
 
 const handleError = (res, statusCode, message) => {
   console.error(message);
@@ -459,6 +465,25 @@ app.use("/*", async (_req, res) => {
     .set("Content-Type", "text/html")
     .send(readFileSync(join(STATIC_PATH, "index.html")));
 });
+
+// Last line of defense: turn any async throw that reached Express (e.g. a Shopify
+// 403 in the auth middleware) into a clean response instead of an unhandled
+// rejection that would crash the process.
+app.use((err, _req, res, _next) => {
+  console.error("[express-error]", err?.message || err);
+  if (res.headersSent) return;
+  res
+    .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+    .send({ error: "Request failed" });
+});
+
+// Keep the server alive if anything still slips through outside the request cycle.
+process.on("unhandledRejection", (reason) =>
+  console.error("[unhandledRejection]", reason)
+);
+process.on("uncaughtException", (err) =>
+  console.error("[uncaughtException]", err)
+);
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 
