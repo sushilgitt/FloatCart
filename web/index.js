@@ -4,6 +4,7 @@ import { readFileSync } from "fs";
 import crypto from "crypto";
 import express from "express";
 import serveStatic from "serve-static";
+import { RequestedTokenType } from "@shopify/shopify-api";
 import shopify from "./shopify.js";
 import cancelSubscription from "./cancel-subscription.js";
 import GDPRWebhookHandlers from "./gdpr.js";
@@ -197,7 +198,59 @@ app.post("/api/solnix-proxy/:event", async (req, res) => {
 const wrapAsync = (mw) => (req, res, next) =>
   Promise.resolve(mw(req, res, next)).catch(next);
 
-app.use("/api/*", wrapAsync(shopify.validateAuthenticatedSession()));
+// Embedded-app auth via token exchange.
+// Shopify no longer accepts the legacy NON-EXPIRING offline tokens that the OAuth
+// authorization-code grant produced, so every Admin API call with the stored token
+// returned a 403 ("Non-expiring access tokens are no longer accepted"). Instead we
+// exchange the App Bridge session token (sent as a Bearer header on every
+// authenticated fetch) for a fresh, EXPIRING offline access token, caching it until
+// it nears expiry. No reinstall needed — this uses the existing install grant.
+async function authViaTokenExchange(req, res, next) {
+  const bearer = (req.headers.authorization || "").match(/^Bearer (.+)$/);
+  if (!bearer) {
+    return res
+      .status(HTTP_STATUS.UNAUTHORIZED)
+      .send({ error: "Missing session token" });
+  }
+
+  let shop;
+  const sessionToken = bearer[1];
+  try {
+    const payload = await shopify.api.session.decodeSessionToken(sessionToken);
+    shop = shopify.api.utils.sanitizeShop(
+      String(payload.dest || "").replace(/^https?:\/\//, ""),
+      true
+    );
+  } catch (error) {
+    console.error("[auth] invalid session token:", error?.message || error);
+    return res
+      .status(HTTP_STATUS.UNAUTHORIZED)
+      .send({ error: "Invalid session token" });
+  }
+
+  const offlineId = shopify.api.session.getOfflineId(shop);
+  let session = await shopify.config.sessionStorage.loadSession(offlineId);
+
+  const stillValid =
+    session?.accessToken &&
+    session.expires &&
+    new Date(session.expires).getTime() > Date.now() + 60_000;
+
+  if (!stillValid) {
+    const exchanged = await shopify.api.auth.tokenExchange({
+      shop,
+      sessionToken,
+      requestedTokenType: RequestedTokenType.OfflineAccessToken,
+    });
+    session = exchanged.session;
+    await shopify.config.sessionStorage.storeSession(session);
+  }
+
+  res.locals.shopify = { ...res.locals.shopify, session };
+  return next();
+}
+
+app.use("/api/*", wrapAsync(authViaTokenExchange));
 
 const handleError = (res, statusCode, message) => {
   console.error(message);
