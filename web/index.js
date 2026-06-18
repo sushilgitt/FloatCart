@@ -471,6 +471,17 @@ app.use("/*", async (_req, res) => {
 // rejection that would crash the process.
 app.use((err, _req, res, _next) => {
   console.error("[express-error]", err?.message || err);
+  if (err?.response) {
+    console.error(
+      "[express-error-detail]",
+      JSON.stringify({
+        code: err.response.code,
+        statusText: err.response.statusText,
+        body: err.response.body,
+        headers: err.response.headers,
+      })
+    );
+  }
   if (res.headersSent) return;
   res
     .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)

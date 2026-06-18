@@ -6,9 +6,9 @@ embedded = true
 client_id = "9fa2579eeeae0eaae7addd77b7003f1e"
 
 [build]
-# Required so `shopify app deploy` pushes this app config (access_scopes, URLs,
-# proxy, webhooks) to the Partner Dashboard — not just extensions. Without it the
-# emptied scopes never reach Shopify and the Protected Customer Data 403 persists.
+# Required so `shopify app deploy` pushes this app config (scopes/URLs/proxy/webhooks)
+# to the Partner Dashboard — not just extensions. The Shopify CLI strips this on
+# reformat; re-add it if a CLI run removes it again.
 include_config_on_deploy = true
 automatically_update_urls_on_dev = true
 
@@ -21,10 +21,11 @@ api_version = "2026-07"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-# This app is display-only: it uses app-owned metafields, billing, and basic shop
-# info — none of which require access scopes. Requesting order/product scopes here
-# pulled the app under Protected Customer Data enforcement and broke OAuth (403).
-scopes = ""
+# read_products is a minimal NON-customer-data scope. The app needs no scopes of its
+# own, but a token with ZERO scopes is forbidden from the Admin API (403 on every
+# request). read_products unlocks Admin API access without re-triggering Protected
+# Customer Data enforcement (which order/customer scopes like write_draft_orders did).
+scopes = "read_products"
 
 [auth]
 redirect_urls = [ "https://ezjxcaxfp8j4m9s210rcbfrv.91.239.208.85.sslip.io/api/auth/callback" ]
