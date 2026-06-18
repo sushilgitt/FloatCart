@@ -4,7 +4,7 @@ import { readFileSync } from "fs";
 import crypto from "crypto";
 import express from "express";
 import serveStatic from "serve-static";
-import { RequestedTokenType } from "@shopify/shopify-api";
+import { Session } from "@shopify/shopify-api";
 import shopify from "./shopify.js";
 import cancelSubscription from "./cancel-subscription.js";
 import GDPRWebhookHandlers from "./gdpr.js";
@@ -205,6 +205,49 @@ const wrapAsync = (mw) => (req, res, next) =>
 // exchange the App Bridge session token (sent as a Bearer header on every
 // authenticated fetch) for a fresh, EXPIRING offline access token, caching it until
 // it nears expiry. No reinstall needed — this uses the existing install grant.
+// Manual token exchange that requests an EXPIRING offline access token.
+// The library's shopify.api.auth.tokenExchange() omits the `expiring=1` flag, so it
+// returns the legacy non-expiring token that Shopify now rejects with a 403. Adding
+// `expiring=1` yields a token with `expires_in` (+ a refresh_token) that Shopify
+// accepts.
+async function exchangeForExpiringOfflineToken(shop, sessionToken) {
+  const response = await fetch(`https://${shop}/admin/oauth/access_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({
+      client_id: process.env.SHOPIFY_API_KEY,
+      client_secret: process.env.SHOPIFY_API_SECRET,
+      grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
+      subject_token: sessionToken,
+      subject_token_type: "urn:ietf:params:oauth:token-type:id_token",
+      requested_token_type:
+        "urn:shopify:params:oauth:token-type:offline-access-token",
+      expiring: 1,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(
+      `Expiring token exchange failed (${response.status}): ${detail.slice(0, 200)}`
+    );
+  }
+
+  const data = await response.json();
+  const session = new Session({
+    id: shopify.api.session.getOfflineId(shop),
+    shop,
+    state: "",
+    isOnline: false,
+  });
+  session.accessToken = data.access_token;
+  session.scope = data.scope;
+  if (data.expires_in) {
+    session.expires = new Date(Date.now() + Number(data.expires_in) * 1000);
+  }
+  return session;
+}
+
 async function authViaTokenExchange(req, res, next) {
   const bearer = (req.headers.authorization || "").match(/^Bearer (.+)$/);
   if (!bearer) {
@@ -237,12 +280,7 @@ async function authViaTokenExchange(req, res, next) {
     new Date(session.expires).getTime() > Date.now() + 60_000;
 
   if (!stillValid) {
-    const exchanged = await shopify.api.auth.tokenExchange({
-      shop,
-      sessionToken,
-      requestedTokenType: RequestedTokenType.OfflineAccessToken,
-    });
-    session = exchanged.session;
+    session = await exchangeForExpiringOfflineToken(shop, sessionToken);
     await shopify.config.sessionStorage.storeSession(session);
   }
 
