@@ -7,7 +7,7 @@ function parseNumber(value, fallback) {
 
 export const FREE_PLAN = "free";
 export const PREMIUM_PLAN =
-  process.env.SHOPIFY_PREMIUM_PLAN || "FloatCart Premium";
+  process.env.SHOPIFY_PREMIUM_PLAN || "premium-plan";
 export const PREMIUM_PLAN_KEY =
   process.env.SHOPIFY_PREMIUM_PLAN_KEY || "floating-cart-button-premium";
 export const PREMIUM_PRICE = parseNumber(
