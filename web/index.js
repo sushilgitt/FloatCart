@@ -31,7 +31,28 @@ const app = express();
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
   shopify.config.auth.callbackPath,
-  shopify.auth.callback(),
+  async (req, res, next) => {
+    try {
+      const { session } = await shopify.api.auth.callback({
+        rawRequest: req,
+        rawResponse: res,
+      });
+      await shopify.config.sessionStorage.storeSession(session);
+      // This app has no application webhooks. Its only webhooks are the mandatory
+      // compliance topics, declared in shopify.app.toml and registered by Shopify
+      // automatically. We intentionally skip shopify.api.webhooks.register() — it
+      // runs an Admin GraphQL query that can return 403 and abort OAuth (500).
+      res.locals.shopify = { ...res.locals.shopify, session };
+      return next();
+    } catch (err) {
+      console.error("OAuth callback failed:", err);
+      const shop = req.query.shop;
+      if (shop) {
+        return res.redirect(`/api/auth?shop=${encodeURIComponent(String(shop))}`);
+      }
+      return res.status(500).send("OAuth callback failed");
+    }
+  },
   shopify.redirectToShopifyOrAppRoot()
 );
 app.post(

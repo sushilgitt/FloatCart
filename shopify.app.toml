@@ -1,30 +1,32 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-# client_id is populated by `shopify app config link` when you create/link the new app
 name = "FloatCart"
-application_url = "https://REPLACE_WITH_NEW_APP_URL"
+application_url = "https://ezjxcaxfp8j4m9s210rcbfrv.91.239.208.85.sslip.io"
 embedded = true
+client_id = "9fa2579eeeae0eaae7addd77b7003f1e"
 
 [build]
-automatically_update_urls_on_dev = false
+automatically_update_urls_on_dev = true
 
 [webhooks]
-api_version = "2026-04"
+api_version = "2026-07"
 
   [[webhooks.subscriptions]]
-  uri = "https://REPLACE_WITH_NEW_APP_URL/api/webhooks"
+  uri = "https://ezjxcaxfp8j4m9s210rcbfrv.91.239.208.85.sslip.io/api/webhooks"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
 [access_scopes]
-scopes = "write_cart_transforms,write_draft_orders,write_products"
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+# This app is display-only: it uses app-owned metafields, billing, and basic shop
+# info — none of which require access scopes. Requesting order/product scopes here
+# pulled the app under Protected Customer Data enforcement and broke OAuth (403).
+scopes = ""
 
 [auth]
-redirect_urls = [
-  "https://REPLACE_WITH_NEW_APP_URL/api/auth/callback"
-]
+redirect_urls = [ "https://ezjxcaxfp8j4m9s210rcbfrv.91.239.208.85.sslip.io/api/auth/callback" ]
 
 [app_proxy]
-url = "https://REPLACE_WITH_NEW_APP_URL/api/floating-cart"
+url = "https://ezjxcaxfp8j4m9s210rcbfrv.91.239.208.85.sslip.io/api/floating-cart"
 subpath = "floating-cart"
 prefix = "apps"
 

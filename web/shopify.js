@@ -21,7 +21,7 @@ const shopify = shopifyApp({
     apiKey: process.env.SHOPIFY_API_KEY,
     apiSecretKey: process.env.SHOPIFY_API_SECRET,
     hostName: appHost.replace(/https?:\/\//, ""),
-    scopes: process.env.SCOPES.split(","),
+    scopes: (process.env.SCOPES || "").split(",").map((s) => s.trim()).filter(Boolean),
     billing: billingConfig,
   },
   auth: {
