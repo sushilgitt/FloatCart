@@ -6,10 +6,6 @@ embedded = true
 client_id = "9fa2579eeeae0eaae7addd77b7003f1e"
 
 [build]
-# Required so `shopify app deploy` pushes this app config (scopes/URLs/proxy/webhooks)
-# to the Partner Dashboard — not just extensions. The Shopify CLI strips this on
-# reformat; re-add it if a CLI run removes it again.
-include_config_on_deploy = true
 automatically_update_urls_on_dev = true
 
 [webhooks]
