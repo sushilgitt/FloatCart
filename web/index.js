@@ -126,6 +126,10 @@ app.get("/api/floating-cart/hasSubscription", async (req, res) => {
       });
     }
 
+    // Public storefront context: no App Bridge id_token here, so we cannot re-exchange a
+    // stale offline token. getPlanTier swallows a 401 and returns FREE (graceful, never 500).
+    // The stored token is refreshed the next time the merchant opens the embedded admin app
+    // (which self-heals via withFreshToken), after which this route sees the healthy token.
     const tier = await getPlanTier(session);
 
     return res.status(HTTP_STATUS.OK).send({
@@ -140,15 +144,21 @@ app.get("/api/floating-cart/hasSubscription", async (req, res) => {
   }
 });
 
+// Lets errors (e.g. a 401) propagate so withFreshToken can retry on the embedded routes.
+async function checkPremium(session) {
+  const hasPremium = await shopify.api.billing.check({
+    session,
+    plans: [PREMIUM_PLAN],
+    isTest: IS_TEST,
+  });
+  return hasPremium ? PREMIUM_PLAN : FREE_PLAN;
+}
+
+// Swallowing wrapper for the PUBLIC storefront proxy, which has no session token to
+// re-exchange — degrade to FREE rather than erroring the storefront widget.
 async function getPlanTier(session) {
   try {
-    const hasPremium = await shopify.api.billing.check({
-      session,
-      plans: [PREMIUM_PLAN],
-      isTest: IS_TEST,
-    });
-
-    return hasPremium ? PREMIUM_PLAN : FREE_PLAN;
+    return await checkPremium(session);
   } catch (error) {
     console.error("Error checking plan tier:", error);
     return FREE_PLAN;
@@ -284,9 +294,53 @@ async function authViaTokenExchange(req, res, next) {
     await shopify.config.sessionStorage.storeSession(session);
   }
 
-  res.locals.shopify = { ...res.locals.shopify, session };
+  res.locals.shopify = { ...res.locals.shopify, session, shop, sessionToken };
   return next();
 }
+
+// Run an Admin-API operation with self-healing auth. The cached offline token can be
+// invalidated by Shopify (rotation/reinstall/scope change) BEFORE its locally stored
+// `expires`, so the fast-path cache in authViaTokenExchange may hand us a token Shopify
+// rejects with 401/403. When that happens we force ONE fresh token exchange (bypassing the
+// cache), persist it, and retry the operation exactly once. `op` receives the session to use.
+async function withFreshToken(res, op) {
+  try {
+    return await op(res.locals.shopify.session);
+  } catch (err) {
+    const code = err?.response?.code;
+    if (code !== 401 && code !== 403) throw err;
+
+    const { shop, sessionToken } = res.locals.shopify || {};
+    // The public storefront proxy has no id_token to exchange — cannot self-heal here.
+    if (!shop || !sessionToken) throw err;
+
+    let fresh;
+    try {
+      fresh = await exchangeForExpiringOfflineToken(shop, sessionToken);
+      await shopify.config.sessionStorage.storeSession(fresh);
+      res.locals.shopify.session = fresh;
+    } catch (exchangeErr) {
+      // Re-exchange itself failed (e.g. bad credentials / not installed) — surface clearly.
+      exchangeErr.code = "ADMIN_AUTH_FAILED";
+      throw exchangeErr;
+    }
+
+    // Retry once, outside the catch so a second failure cannot loop.
+    try {
+      return await op(fresh);
+    } catch (retryErr) {
+      // A fresh token still rejected => credentials/install problem, not stale cache.
+      retryErr.code = "ADMIN_AUTH_FAILED";
+      throw retryErr;
+    }
+  }
+}
+
+// True when an error is an Admin-API authentication failure (after any retry).
+const isAuthFailure = (error) =>
+  error?.code === "ADMIN_AUTH_FAILED" ||
+  error?.response?.code === 401 ||
+  error?.response?.code === 403;
 
 app.use("/api/*", wrapAsync(authViaTokenExchange));
 
@@ -323,34 +377,34 @@ const shopDetailsQuery = `
 
 app.get("/api/createSubscription", async (_req, res) => {
   try {
-    const session = res.locals.shopify.session;
-
-    const hasPayment = await shopify.api.billing.check({
-      session,
-      plans: [PREMIUM_PLAN],
-      isTest: IS_TEST,
-    });
-
-    if (hasPayment) {
-      return res.status(HTTP_STATUS.OK).send({
-        isActiveSubscription: true,
-        plan: PREMIUM_PLAN,
+    const result = await withFreshToken(res, async (session) => {
+      const hasPayment = await shopify.api.billing.check({
+        session,
+        plans: [PREMIUM_PLAN],
+        isTest: IS_TEST,
       });
-    }
 
-    const confirmationUrl = await shopify.api.billing.request({
-      session,
-      plan: PREMIUM_PLAN,
-      isTest: IS_TEST,
+      if (hasPayment) {
+        return { isActiveSubscription: true, plan: PREMIUM_PLAN };
+      }
+
+      const confirmationUrl = await shopify.api.billing.request({
+        session,
+        plan: PREMIUM_PLAN,
+        isTest: IS_TEST,
+      });
+
+      return { isActiveSubscription: false, plan: PREMIUM_PLAN, confirmationUrl };
     });
 
-    return res.status(HTTP_STATUS.OK).send({
-      isActiveSubscription: false,
-      plan: PREMIUM_PLAN,
-      confirmationUrl,
-    });
+    return res.status(HTTP_STATUS.OK).send(result);
   } catch (error) {
     console.error("Failed to create subscription:", error);
+    if (isAuthFailure(error)) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).send({
+        error: "Admin authentication failed; please reopen the app to re-authenticate.",
+      });
+    }
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
       error: "Failed to create subscription",
     });
@@ -359,47 +413,49 @@ app.get("/api/createSubscription", async (_req, res) => {
 
 app.get("/api/cancelSubscription", async (_req, res) => {
   try {
-    const session = res.locals.shopify.session;
-
-    const hasPremium = await shopify.api.billing.check({
-      session,
-      plans: [PREMIUM_PLAN],
-      isTest: IS_TEST,
-    });
-
-    if (!hasPremium) {
-      return res.status(HTTP_STATUS.OK).send({
-        status: "No subscription found",
-      });
-    }
-
-    const subscriptionStatus = await cancelSubscription(session);
-    const client = new shopify.api.clients.Graphql({ session });
-    const currentInstallations = await client.request(CURRENT_APP_INSTALLATION, {
-      variables: { namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
-    });
-
-    const installation = currentInstallations?.currentAppInstallation;
-    const ownerId = installation?.id;
-    const metafield = installation?.metafield;
-
-    if (ownerId && metafield) {
-      const deleteResp = await client.request(APP_OWNED_METAFIELD_DELETE, {
-        variables: { ownerId, namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
+    const result = await withFreshToken(res, async (session) => {
+      const hasPremium = await shopify.api.billing.check({
+        session,
+        plans: [PREMIUM_PLAN],
+        isTest: IS_TEST,
       });
 
-      const delErrors = deleteResp?.appOwnedMetafieldDelete?.userErrors || [];
-      if (delErrors.length) {
-        console.error("Failed to delete metafield:", delErrors);
+      if (!hasPremium) {
+        return { status: "No subscription found" };
       }
-    }
 
-    return res.status(HTTP_STATUS.OK).send({
-      status: subscriptionStatus,
-      cancelledPlan: PREMIUM_PLAN,
+      const subscriptionStatus = await cancelSubscription(session);
+      const client = new shopify.api.clients.Graphql({ session });
+      const currentInstallations = await client.request(CURRENT_APP_INSTALLATION, {
+        variables: { namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
+      });
+
+      const installation = currentInstallations?.currentAppInstallation;
+      const ownerId = installation?.id;
+      const metafield = installation?.metafield;
+
+      if (ownerId && metafield) {
+        const deleteResp = await client.request(APP_OWNED_METAFIELD_DELETE, {
+          variables: { ownerId, namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
+        });
+
+        const delErrors = deleteResp?.appOwnedMetafieldDelete?.userErrors || [];
+        if (delErrors.length) {
+          console.error("Failed to delete metafield:", delErrors);
+        }
+      }
+
+      return { status: subscriptionStatus, cancelledPlan: PREMIUM_PLAN };
     });
+
+    return res.status(HTTP_STATUS.OK).send(result);
   } catch (error) {
     console.error("Failed to cancel subscription:", error);
+    if (isAuthFailure(error)) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).send({
+        error: "Admin authentication failed; please reopen the app to re-authenticate.",
+      });
+    }
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
       error: "Failed to cancel subscription",
     });
@@ -408,53 +464,55 @@ app.get("/api/cancelSubscription", async (_req, res) => {
 
 app.get("/api/hasActiveSubscription", async (_req, res) => {
   try {
-    const session = res.locals.shopify.session;
-    const tier = await getPlanTier(session);
-    const hasActive = tier === PREMIUM_PLAN;
+    const result = await withFreshToken(res, async (session) => {
+      const tier = await checkPremium(session);
+      const hasActive = tier === PREMIUM_PLAN;
 
-    if (!hasActive) {
-      return res.status(HTTP_STATUS.OK).send({
-        hasActiveSubscription: false,
-        tier: FREE_PLAN,
-      });
-    }
-
-    const client = new shopify.api.clients.Graphql({ session });
-    const currentInstallations = await client.request(CURRENT_APP_INSTALLATION, {
-      variables: { namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
-    });
-
-    const installation = currentInstallations?.currentAppInstallation;
-    const ownerId = installation?.id;
-    const existing = installation?.metafield;
-
-    if (!existing && ownerId) {
-      const createResp = await client.request(CREATE_APP_DATA_METAFIELD, {
-        variables: {
-          metafieldsSetInput: [
-            {
-              namespace: SOLNIX,
-              key: PREMIUM_PLAN_KEY,
-              type: "boolean",
-              value: "true",
-              ownerId,
-            },
-          ],
-        },
-      });
-
-      const createErrors = createResp?.metafieldsSet?.userErrors || [];
-      if (createErrors.length) {
-        console.error("Failed to add metafield:", createErrors);
+      if (!hasActive) {
+        return { hasActiveSubscription: false, tier: FREE_PLAN };
       }
-    }
 
-    return res.status(HTTP_STATUS.OK).send({
-      hasActiveSubscription: true,
-      tier,
+      const client = new shopify.api.clients.Graphql({ session });
+      const currentInstallations = await client.request(CURRENT_APP_INSTALLATION, {
+        variables: { namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
+      });
+
+      const installation = currentInstallations?.currentAppInstallation;
+      const ownerId = installation?.id;
+      const existing = installation?.metafield;
+
+      if (!existing && ownerId) {
+        const createResp = await client.request(CREATE_APP_DATA_METAFIELD, {
+          variables: {
+            metafieldsSetInput: [
+              {
+                namespace: SOLNIX,
+                key: PREMIUM_PLAN_KEY,
+                type: "boolean",
+                value: "true",
+                ownerId,
+              },
+            ],
+          },
+        });
+
+        const createErrors = createResp?.metafieldsSet?.userErrors || [];
+        if (createErrors.length) {
+          console.error("Failed to add metafield:", createErrors);
+        }
+      }
+
+      return { hasActiveSubscription: true, tier };
     });
+
+    return res.status(HTTP_STATUS.OK).send(result);
   } catch (error) {
     console.error("Failed to fetch subscription:", error);
+    if (isAuthFailure(error)) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).send({
+        error: "Admin authentication failed; please reopen the app to re-authenticate.",
+      });
+    }
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
       error: "Failed to fetch subscription",
     });
@@ -478,7 +536,7 @@ app.get("/api/solnix-proxy/plan-info", async (_req, res) => {
   try {
     const session = res.locals.shopify.session;
     const storeId = await getStoreId(session);
-    const planTier = await getPlanTier(session);
+    const planTier = await withFreshToken(res, (s) => checkPremium(s));
     const orderLimit = getOrderLimit(planTier);
     const currentCount = await getCurrentOrderCount(storeId);
     const remaining = Math.max(0, orderLimit - currentCount);
@@ -492,6 +550,11 @@ app.get("/api/solnix-proxy/plan-info", async (_req, res) => {
     });
   } catch (error) {
     console.error("Failed to get plan info:", error);
+    if (isAuthFailure(error)) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        error: "Admin authentication failed; please reopen the app to re-authenticate.",
+      });
+    }
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       error: "Failed to get plan information",
     });
@@ -522,8 +585,9 @@ app.get("/api/store-details", async (_req, res) => {
   }
 
   try {
-    const client = new shopify.api.clients.Graphql({ session });
-    const response = await client.request(shopDetailsQuery);
+    const response = await withFreshToken(res, (s) =>
+      new shopify.api.clients.Graphql({ session: s }).request(shopDetailsQuery)
+    );
     const shopData = response?.shop ?? response?.data?.shop ?? response?.data ?? {};
     const { name, email, primaryDomain, plan } = shopData;
 
