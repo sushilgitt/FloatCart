@@ -12,7 +12,7 @@ export const PREMIUM_PLAN_KEY =
   process.env.SHOPIFY_PREMIUM_PLAN_KEY || "floating-cart-button-premium";
 export const PREMIUM_PRICE = parseNumber(
   process.env.SHOPIFY_PREMIUM_PRICE,
-  30,
+  15,
 );
 export const PREMIUM_CURRENCY =
   process.env.SHOPIFY_PREMIUM_CURRENCY || "USD";

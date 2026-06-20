@@ -5,7 +5,6 @@ import {
   Layout,
   Page,
   Stack,
-  TextContainer,
 } from "@shopify/polaris";
 import { useNavigate } from "react-router-dom";
 
@@ -24,11 +23,6 @@ const faqs = [
     question: "What does Premium add?",
     answer:
       "Premium unlocks advanced storefront customization, richer cart presentation, and the polished production-ready FloatCart experience.",
-  },
-  {
-    question: "How do I get setup help?",
-    answer:
-      "Reach out at support@solnix.store and include your shop domain plus a short note about the issue you are seeing.",
   },
 ];
 
@@ -90,10 +84,7 @@ export default function Support() {
             store onto Premium, we want the next step to feel straightforward.
           </p>
           <Stack spacing="tight">
-            <Button primary onClick={() => window.open("mailto:support@solnix.store")}>
-              Email support
-            </Button>
-            <Button onClick={() => navigate("/install")}>Open setup guide</Button>
+            <Button primary onClick={() => navigate("/install")}>Open setup guide</Button>
             <Button onClick={() => navigate("/pricing")}>Review pricing</Button>
           </Stack>
         </div>
@@ -101,26 +92,10 @@ export default function Support() {
 
       <Layout>
         <Layout.Section oneHalf>
-          <Card sectioned title="Best way to reach us">
-            <TextContainer>
-              <p>
-                Email <strong>support@solnix.store</strong> with your shop domain,
-                theme name, and a short description of what you want the floating
-                cart experience to do.
-              </p>
-              <p>
-                For billing questions, mention whether the store is on the Free
-                or Premium plan so we can point you to the right next step.
-              </p>
-            </TextContainer>
-          </Card>
-        </Layout.Section>
-
-        <Layout.Section oneHalf>
           <Card sectioned title="Helpful shortcuts">
             <Stack vertical spacing="tight">
               <div>Use the dashboard to jump directly into the current theme editor.</div>
-              <div>Use the pricing page to start or cancel the $30 Premium plan.</div>
+              <div>Use the pricing page to start or cancel the $15 Premium plan.</div>
               <div>Use the setup guide when you need a quick storefront checklist.</div>
             </Stack>
           </Card>

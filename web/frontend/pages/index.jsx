@@ -193,7 +193,6 @@ export default function HomePage() {
               <div>Advanced customization controls for storefront styling.</div>
               <div>Premium design presets for a sharper floating cart experience.</div>
               <div>Product total price support and richer cart presentation.</div>
-              <div>Production-ready setup for the `floating.solnix.store` domain.</div>
             </Stack>
           </Card>
         </Layout.Section>

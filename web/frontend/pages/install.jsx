@@ -154,7 +154,6 @@ export default function Installation() {
         <Layout.Section oneHalf>
           <Card sectioned title="Need help while setting up?">
             <Stack vertical spacing="tight">
-              <div>Email support at `support@solnix.store` for store-specific help.</div>
               <div>Use the pricing page to switch between Free and Premium anytime.</div>
               <div>Return to the dashboard to monitor the store's active plan.</div>
             </Stack>
