@@ -17,7 +17,7 @@ import { Redirect } from "@shopify/app-bridge/actions";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useAuthenticatedFetch } from "../hooks";
 
-const PREMIUM_PRICE = 19;
+const PREMIUM_PRICE = 30;
 
 const planCards = [
   {
