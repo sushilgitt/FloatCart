@@ -430,7 +430,7 @@ app.get("/api/cancelSubscription", async (_req, res) => {
         variables: { namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
       });
 
-      const installation = currentInstallations?.currentAppInstallation;
+      const installation = currentInstallations?.data?.currentAppInstallation;
       const ownerId = installation?.id;
       const metafield = installation?.metafield;
 
@@ -439,7 +439,7 @@ app.get("/api/cancelSubscription", async (_req, res) => {
           variables: { ownerId, namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
         });
 
-        const delErrors = deleteResp?.appOwnedMetafieldDelete?.userErrors || [];
+        const delErrors = deleteResp?.data?.appOwnedMetafieldDelete?.userErrors || [];
         if (delErrors.length) {
           console.error("Failed to delete metafield:", delErrors);
         }
@@ -477,7 +477,7 @@ app.get("/api/hasActiveSubscription", async (_req, res) => {
         variables: { namespace: SOLNIX, key: PREMIUM_PLAN_KEY },
       });
 
-      const installation = currentInstallations?.currentAppInstallation;
+      const installation = currentInstallations?.data?.currentAppInstallation;
       const ownerId = installation?.id;
       const existing = installation?.metafield;
 
@@ -496,7 +496,7 @@ app.get("/api/hasActiveSubscription", async (_req, res) => {
           },
         });
 
-        const createErrors = createResp?.metafieldsSet?.userErrors || [];
+        const createErrors = createResp?.data?.metafieldsSet?.userErrors || [];
         if (createErrors.length) {
           console.error("Failed to add metafield:", createErrors);
         }

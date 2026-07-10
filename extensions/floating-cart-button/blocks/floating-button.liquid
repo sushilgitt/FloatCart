@@ -297,14 +297,28 @@ color:white;
   {% endif %}
 
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
+async function initFloatingCart() {
   let plan = "free"; // default plan
 
   const floatingWrapper = document.querySelector('.mx_floating_elpySv');
     const poweredBy = document.querySelector('.mx_poweredby_solnix');
+
+  // Reveal helper: make the widget visible AND slide it on-screen even when the cart
+  // is empty. Base CSS parks it off-screen (bottom:-100% / -2000px) until the
+  // .activeCompareBar class is present.
+  function revealFloatingCart() {
+    if (!floatingWrapper) return;
+    floatingWrapper.style.visibility = "visible";
+    floatingWrapper.classList.add('activeCompareBar');
+  }
+
   if (floatingWrapper) {
     floatingWrapper.style.visibility = "hidden"; // hide until logic done
   }
+
+  // Safety net: never leave the widget stuck hidden if the proxy call hangs or fails
+  // at the network layer before the try/catch below can run.
+  const revealTimer = setTimeout(revealFloatingCart, 2500);
 
   // ✅ Always run API check
   try {
@@ -318,13 +332,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (res.ok) {
       const data = await res.json();
-      if (data && data.tier) {
-        plan = data.tier;
-      }
+      // Use the reliable boolean the API returns rather than string-matching the plan
+      // name: data.tier is the SHOPIFY_PREMIUM_PLAN value (defaults to "premium-plan",
+      // not "premium"), so the plan === 'premium' branch below would otherwise never match.
+      plan = data && data.hasActiveSubscription ? 'premium' : 'free';
     }
   } catch (err) {
     console.warn("⚠️ Subscription check failed, defaulting to free", err);
   }
+
+  clearTimeout(revealTimer);
 
   // ✅ This will now always run
   console.log("🎯 Final Plan find:", plan);
@@ -405,10 +422,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (desing2Stickycartcount) desing2Stickycartcount.style.color = '{{ block.settings.text_color }}';
     }
 
-    // Finally show wrapper
-    floatingWrapper.style.visibility = "visible";
+    // Finally show wrapper (visible + on-screen, regardless of cart contents)
+    revealFloatingCart();
   }
-});
+}
+
+// Run as soon as the DOM is ready. Relying only on DOMContentLoaded is unreliable in
+// the Shopify theme editor: when the app embed is toggled on, Shopify injects this
+// block into the already-loaded preview DOM, so DOMContentLoaded has already fired and
+// the handler would never run (the widget then stays hidden until a manual refresh).
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initFloatingCart);
+} else {
+  initFloatingCart();
+}
 </script>
 
 
@@ -636,10 +663,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         console.log(currentCurrency + ' store currency');
         console.log(cartCount + 'cart');
-        if (cartCount > 0) {
+        // Keep the widget on-screen even when the cart is empty (previously it was
+        // parked off-screen whenever item_count was 0).
+        if (floating_btn) {
           floating_btn.classList.add('activeCompareBar');
-        } else {
-          floating_btn.classList.remove('activeCompareBar');
         }
         if (addItmes && totalprice) {
           addItmes.textContent = cartCount;
