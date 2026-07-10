@@ -15,6 +15,8 @@ import {
   FREE_PLAN,
   PREMIUM_PLAN,
   PREMIUM_PLAN_KEY,
+  PREMIUM_PRICE,
+  PREMIUM_CURRENCY,
   IS_TEST,
 } from "./config/plans.js";
 
@@ -26,6 +28,32 @@ const STATIC_PATH =
   process.env.NODE_ENV === "production"
     ? `${process.cwd()}/frontend/dist`
     : `${process.cwd()}/frontend/`;
+
+// Billing mode is LIVE unless SHOPIFY_BILLING_TEST_MODE=true. Log it on boot so a
+// misconfigured non-prod store (which would otherwise create REAL charges) is obvious.
+console.log(
+  `[billing] mode: ${IS_TEST ? "TEST" : "LIVE"} — set SHOPIFY_BILLING_TEST_MODE=true for test charges`
+);
+
+// Per-shop plan cache. Without it the storefront proxy calls the Admin billing API on
+// every pageview (rate-limit + latency, and premium stores flicker to FREE when
+// throttled). We cache confirmed checks briefly and invalidate them on the
+// app_subscriptions/update webhook so upgrades/cancellations reflect within one pageview.
+const PLAN_CACHE_TTL_MS = 5 * 60 * 1000;
+const planCache = new Map(); // shop -> { tier, expires }
+
+function getCachedPlan(shop) {
+  const entry = planCache.get(shop);
+  if (entry && entry.expires > Date.now()) return entry.tier;
+  if (entry) planCache.delete(shop);
+  return null;
+}
+function setCachedPlan(shop, tier) {
+  planCache.set(shop, { tier, expires: Date.now() + PLAN_CACHE_TTL_MS });
+}
+function invalidatePlan(shop) {
+  planCache.delete(shop);
+}
 
 const app = express();
 
@@ -86,6 +114,14 @@ app.post(
       .toUpperCase().replace(/\//g, "_");
     const shop = req.headers["x-shopify-shop-domain"];
     const webhookId = req.headers["x-shopify-webhook-id"];
+
+    // Subscription lifecycle changed (upgrade/cancel/frozen/reactivated): drop the cached
+    // plan so the next storefront check re-reads the live billing state.
+    if (topic === "APP_SUBSCRIPTIONS_UPDATE" && shop) {
+      invalidatePlan(String(shop));
+      console.log(`[billing] app_subscriptions/update → invalidated plan cache for ${shop}`);
+    }
+
     const handler = GDPRWebhookHandlers[topic];
     if (handler?.callback) {
       handler.callback(topic, shop, req.body, webhookId)
@@ -117,6 +153,17 @@ app.get("/api/floating-cart/hasSubscription", async (req, res) => {
       });
     }
 
+    // Serve from cache when warm — avoids an Admin billing call on every storefront
+    // pageview (and the FREE-flicker that Admin API throttling would otherwise cause).
+    const cachedTier = getCachedPlan(String(shop));
+    if (cachedTier) {
+      return res.status(HTTP_STATUS.OK).send({
+        hasActiveSubscription: cachedTier === PREMIUM_PLAN,
+        tier: cachedTier,
+        cached: true,
+      });
+    }
+
     const collection = await connectToMongoDB();
     const session = await collection.findOne({ shop });
 
@@ -127,10 +174,16 @@ app.get("/api/floating-cart/hasSubscription", async (req, res) => {
     }
 
     // Public storefront context: no App Bridge id_token here, so we cannot re-exchange a
-    // stale offline token. getPlanTier swallows a 401 and returns FREE (graceful, never 500).
-    // The stored token is refreshed the next time the merchant opens the embedded admin app
-    // (which self-heals via withFreshToken), after which this route sees the healthy token.
-    const tier = await getPlanTier(session);
+    // stale offline token. On any billing error we degrade to FREE (never 500) and do NOT
+    // cache it, so the check retries next pageview once the token self-heals in the admin app.
+    let tier;
+    try {
+      tier = await checkPremium(session);
+      setCachedPlan(String(shop), tier);
+    } catch (error) {
+      console.error("Error checking plan tier:", error?.message || error);
+      tier = FREE_PLAN;
+    }
 
     return res.status(HTTP_STATUS.OK).send({
       hasActiveSubscription: tier === PREMIUM_PLAN,
@@ -152,17 +205,6 @@ async function checkPremium(session) {
     isTest: IS_TEST,
   });
   return hasPremium ? PREMIUM_PLAN : FREE_PLAN;
-}
-
-// Swallowing wrapper for the PUBLIC storefront proxy, which has no session token to
-// re-exchange — degrade to FREE rather than erroring the storefront widget.
-async function getPlanTier(session) {
-  try {
-    return await checkPremium(session);
-  } catch (error) {
-    console.error("Error checking plan tier:", error);
-    return FREE_PLAN;
-  }
 }
 
 app.post("/api/solnix-proxy/:event", async (req, res) => {
@@ -343,6 +385,16 @@ const isAuthFailure = (error) =>
   error?.response?.code === 403;
 
 app.use("/api/*", wrapAsync(authViaTokenExchange));
+
+// Lightweight plan config for the admin UI so the displayed price always matches the
+// actual billing charge (the frontend previously hard-coded $15). No Admin API call.
+app.get("/api/plan-config", (_req, res) => {
+  return res.status(HTTP_STATUS.OK).json({
+    premiumPlan: PREMIUM_PLAN,
+    price: PREMIUM_PRICE,
+    currency: PREMIUM_CURRENCY,
+  });
+});
 
 const handleError = (res, statusCode, message) => {
   console.error(message);

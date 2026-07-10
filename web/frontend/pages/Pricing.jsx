@@ -73,11 +73,27 @@ export default function Pricing() {
   const [loading, setLoading] = useState({ page: true, action: null });
   const [confirm, setConfirm] = useState({ open: false, target: null });
   const [banner, setBanner] = useState({ status: null, msg: "" });
+  const [premiumPrice, setPremiumPrice] = useState(PREMIUM_PRICE);
 
   const activePlan = serverTier && serverTier !== "free" ? "premium" : "free";
 
   useEffect(() => {
     refreshTier();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await fetchAuth("/api/plan-config");
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data?.price != null) {
+          setPremiumPrice(Number(data.price));
+        }
+      } catch (error) {
+        // Non-fatal: keep the default price shown on the card.
+        console.error(error);
+      }
+    })();
   }, []);
 
   async function refreshTier() {
@@ -200,7 +216,7 @@ export default function Pricing() {
         primaryAction={{
           content:
             confirm.target === "premium"
-              ? `Continue for $${PREMIUM_PRICE}/month`
+              ? `Continue for $${premiumPrice}/month`
               : "Cancel Premium",
           onAction: runConfirm,
           loading: loading.action === confirm.target,
@@ -364,7 +380,7 @@ export default function Pricing() {
                           }}
                         >
                           <span style={{ fontSize: 40, fontWeight: 700 }}>
-                            {plan.price}
+                            {plan.key === "premium" ? `$${premiumPrice}` : plan.price}
                           </span>
                           <span
                             style={{

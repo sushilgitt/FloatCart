@@ -12,6 +12,10 @@ automatically_update_urls_on_dev = true
 api_version = "2026-07"
 
   [[webhooks.subscriptions]]
+  topics = [ "app_subscriptions/update" ]
+  uri = "https://ezjxcaxfp8j4m9s210rcbfrv.91.239.208.85.sslip.io/api/webhooks"
+
+  [[webhooks.subscriptions]]
   uri = "https://ezjxcaxfp8j4m9s210rcbfrv.91.239.208.85.sslip.io/api/webhooks"
   # App is display-only and accesses no customer data (matches the Partner Dashboard
   # "My app doesn't require customer data" declaration). Only shop/redact applies.

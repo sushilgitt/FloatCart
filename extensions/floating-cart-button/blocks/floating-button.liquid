@@ -322,10 +322,11 @@ async function initFloatingCart() {
 
   // ✅ Always run API check
   try {
-    const shopUrl = "{{ shop.url }}";
-    const shop = shopUrl.replace(/^https?:\/\//, "");
+    // Use the permanent myshopify domain (matches the stored session key and the webhook
+    // shop-domain). shop.url can be a custom primary domain, which would miss the lookup.
+    const shop = "{{ shop.permanent_domain }}";
     
-    const res = await fetch(`/apps/floating-cart/hasSubscription?shop=${shop}`, {
+    const res = await fetch(`/apps/floating-cart/hasSubscription?shop=${encodeURIComponent(shop)}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" }
     });
