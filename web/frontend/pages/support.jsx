@@ -95,7 +95,7 @@ export default function Support() {
           <Card sectioned title="Helpful shortcuts">
             <Stack vertical spacing="tight">
               <div>Use the dashboard to jump directly into the current theme editor.</div>
-              <div>Use the pricing page to start or cancel the $15 Premium plan.</div>
+              <div>Use the pricing page to start or cancel Premium ($30/month or $300/year).</div>
               <div>Use the setup guide when you need a quick storefront checklist.</div>
             </Stack>
           </Card>

@@ -17,9 +17,11 @@ api_version = "2026-07"
 
   [[webhooks.subscriptions]]
   uri = "https://ezjxcaxfp8j4m9s210rcbfrv.91.239.208.85.sslip.io/api/webhooks"
-  # App is display-only and accesses no customer data (matches the Partner Dashboard
-  # "My app doesn't require customer data" declaration). Only shop/redact applies.
-  compliance_topics = [ "shop/redact" ]
+  # Shopify requires ALL apps to subscribe to the 3 mandatory GDPR/compliance webhooks
+  # (review ref 120349) regardless of customer-data access. Handlers in web/gdpr.js
+  # acknowledge with 200 and no-op (app stores no customer data); HMAC verified in
+  # web/index.js before dispatch.
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes

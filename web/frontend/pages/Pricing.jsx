@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Badge,
   Banner,
   Button,
+  ButtonGroup,
   Card,
   Frame,
   Icon,
@@ -17,7 +19,13 @@ import { Redirect } from "@shopify/app-bridge/actions";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useAuthenticatedFetch } from "../hooks";
 
-const PREMIUM_PRICE = 15;
+// Fallbacks only; the real values come from /api/plan-config.
+const DEFAULT_PRICES = { monthly: 30, yearly: 300, yearlyDiscountPercent: 17 };
+
+const INTERVAL_SUFFIX = { monthly: "/month", yearly: "/year" };
+
+const formatPrice = (amount) =>
+  Number.isInteger(amount) ? `$${amount}` : `$${amount.toFixed(2)}`;
 
 const planCards = [
   {
@@ -40,7 +48,6 @@ const planCards = [
   {
     key: "premium",
     name: "Premium",
-    price: `$${PREMIUM_PRICE}`,
     accent: "linear-gradient(135deg, #111827 0%, #1f2937 55%, #c96f2d 100%)",
     badge: "Production",
     description:
@@ -70,12 +77,20 @@ export default function Pricing() {
   );
 
   const [serverTier, setServerTier] = useState(null);
+  const [activeInterval, setActiveInterval] = useState(null);
+  const [billingInterval, setBillingInterval] = useState("monthly");
   const [loading, setLoading] = useState({ page: true, action: null });
-  const [confirm, setConfirm] = useState({ open: false, target: null });
+  const [confirm, setConfirm] = useState({
+    open: false,
+    target: null,
+    interval: null,
+  });
   const [banner, setBanner] = useState({ status: null, msg: "" });
-  const [premiumPrice, setPremiumPrice] = useState(PREMIUM_PRICE);
+  const [prices, setPrices] = useState(DEFAULT_PRICES);
 
   const activePlan = serverTier && serverTier !== "free" ? "premium" : "free";
+  const premiumOnSelectedInterval =
+    activePlan === "premium" && activeInterval === billingInterval;
 
   useEffect(() => {
     refreshTier();
@@ -86,11 +101,15 @@ export default function Pricing() {
       try {
         const response = await fetchAuth("/api/plan-config");
         const data = await response.json().catch(() => ({}));
-        if (response.ok && data?.price != null) {
-          setPremiumPrice(Number(data.price));
+        if (response.ok && data?.monthly && data?.yearly) {
+          setPrices({
+            monthly: Number(data.monthly.price),
+            yearly: Number(data.yearly.price),
+            yearlyDiscountPercent: Number(data.yearly.discountPercent) || 0,
+          });
         }
       } catch (error) {
-        // Non-fatal: keep the default price shown on the card.
+        // Non-fatal: keep the default prices shown on the card.
         console.error(error);
       }
     })();
@@ -107,31 +126,45 @@ export default function Pricing() {
       }
 
       setServerTier(data?.tier || "free");
+      setActiveInterval(data?.interval || null);
+      if (data?.interval) {
+        setBillingInterval(data.interval);
+      }
     } catch (error) {
       // The Admin API may be temporarily unavailable; default to the Free view
       // instead of showing an alarming error so the page stays usable.
       console.error(error);
       setServerTier("free");
+      setActiveInterval(null);
     } finally {
       setLoading((current) => ({ ...current, page: false }));
     }
   }
 
+  function closeConfirm() {
+    setConfirm({ open: false, target: null, interval: null });
+  }
+
   function openConfirm(target) {
-    if (target === activePlan) {
+    if (target === "free" && activePlan === "free") {
+      setBanner({ status: "info", msg: "Your store is already on the Free plan." });
+      return;
+    }
+
+    if (target === "premium" && premiumOnSelectedInterval) {
       setBanner({
         status: "info",
-        msg: `Your store is already on the ${target === "premium" ? "Premium" : "Free"} plan.`,
+        msg: `Your store is already on Premium with ${billingInterval} billing.`,
       });
       return;
     }
 
-    setConfirm({ open: true, target });
+    setConfirm({ open: true, target, interval: billingInterval });
   }
 
   async function runConfirm() {
-    const target = confirm.target;
-    setConfirm({ open: false, target: null });
+    const { target, interval } = confirm;
+    closeConfirm();
 
     if (!target) return;
 
@@ -157,7 +190,9 @@ export default function Pricing() {
         return;
       }
 
-      const response = await fetchAuth("/api/createSubscription");
+      const response = await fetchAuth(
+        `/api/createSubscription?interval=${encodeURIComponent(interval)}`
+      );
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
@@ -167,7 +202,7 @@ export default function Pricing() {
       if (data?.isActiveSubscription) {
         setBanner({
           status: "success",
-          msg: "Premium is already active for this store.",
+          msg: `Premium with ${interval} billing is already active for this store.`,
         });
         await refreshTier();
         return;
@@ -203,20 +238,33 @@ export default function Pricing() {
     </Stack>
   );
 
+  const confirmInterval = confirm.interval || billingInterval;
+  const yearlyMonthlyEquivalent = formatPrice(prices.yearly / 12);
+  const discountLabel =
+    prices.yearlyDiscountPercent > 0 ? `Save ${prices.yearlyDiscountPercent}%` : "";
+
+  function premiumButtonLabel() {
+    if (premiumOnSelectedInterval) return "Premium active";
+    if (activePlan === "premium") return `Switch to ${billingInterval} billing`;
+    return "Upgrade to Premium";
+  }
+
   return (
     <Frame>
       <Modal
         open={confirm.open}
-        onClose={() => setConfirm({ open: false, target: null })}
+        onClose={closeConfirm}
         title={
           confirm.target === "premium"
-            ? "Upgrade to Premium"
+            ? activePlan === "premium"
+              ? `Switch to ${confirmInterval} billing`
+              : "Upgrade to Premium"
             : "Switch back to Free"
         }
         primaryAction={{
           content:
             confirm.target === "premium"
-              ? `Continue for $${premiumPrice}/month`
+              ? `Continue for ${formatPrice(prices[confirmInterval])}${INTERVAL_SUFFIX[confirmInterval]}`
               : "Cancel Premium",
           onAction: runConfirm,
           loading: loading.action === confirm.target,
@@ -225,17 +273,26 @@ export default function Pricing() {
         secondaryActions={[
           {
             content: "Back",
-            onAction: () => setConfirm({ open: false, target: null }),
+            onAction: closeConfirm,
           },
         ]}
       >
         <Modal.Section>
           <TextContainer>
             {confirm.target === "premium" ? (
-              <p>
-                Premium unlocks the full storefront experience, advanced
-                customization, and product total price support for your store.
-              </p>
+              <>
+                <p>
+                  Premium unlocks the full storefront experience, advanced
+                  customization, and product total price support for your store.
+                </p>
+                <p>
+                  {confirmInterval === "yearly"
+                    ? `Billed ${formatPrice(prices.yearly)} once a year (${yearlyMonthlyEquivalent}/month)${
+                        discountLabel ? `, ${discountLabel.toLowerCase()} compared with monthly billing` : ""
+                      }.`
+                    : `Billed ${formatPrice(prices.monthly)} every 30 days.`}
+                </p>
+              </>
             ) : (
               <p>
                 Cancelling Premium will return the store to the Free plan and
@@ -300,9 +357,39 @@ export default function Pricing() {
           </div>
         </div>
 
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
+          <ButtonGroup segmented>
+            <Button
+              pressed={billingInterval === "monthly"}
+              onClick={() => setBillingInterval("monthly")}
+            >
+              Monthly
+            </Button>
+            <Button
+              pressed={billingInterval === "yearly"}
+              onClick={() => setBillingInterval("yearly")}
+            >
+              Yearly
+            </Button>
+          </ButtonGroup>
+          {discountLabel ? (
+            <Badge status="success">{`${discountLabel} with yearly billing`}</Badge>
+          ) : null}
+        </div>
+
         <Layout>
           {planCards.map((plan) => {
-            const isActive = activePlan === plan.key;
+            const isPremium = plan.key === "premium";
+            const isCurrent = activePlan === plan.key;
+            const isActive = isPremium ? premiumOnSelectedInterval : isCurrent;
             const isBusy = loading.action === plan.key;
 
             return (
@@ -315,10 +402,10 @@ export default function Pricing() {
                       style={{
                         borderRadius: 20,
                         overflow: "hidden",
-                        border: isActive
+                        border: isCurrent
                           ? "2px solid #c96f2d"
                           : "1px solid rgba(17,24,39,0.08)",
-                        boxShadow: isActive
+                        boxShadow: isCurrent
                           ? "0 18px 50px rgba(201,111,45,0.18)"
                           : "0 10px 30px rgba(15,23,42,0.06)",
                       }}
@@ -327,7 +414,7 @@ export default function Pricing() {
                         style={{
                           padding: 24,
                           background: plan.accent,
-                          color: plan.key === "premium" ? "#fff" : "#111827",
+                          color: isPremium ? "#fff" : "#111827",
                         }}
                       >
                         <Stack alignment="center" distribution="equalSpacing">
@@ -353,21 +440,22 @@ export default function Pricing() {
                               {plan.name}
                             </div>
                           </div>
-                          {isActive ? (
+                          {isCurrent ? (
                             <div
                               style={{
                                 padding: "6px 12px",
                                 borderRadius: 999,
-                                background:
-                                  plan.key === "premium"
-                                    ? "rgba(255,255,255,0.16)"
-                                    : "rgba(17,24,39,0.08)",
+                                background: isPremium
+                                  ? "rgba(255,255,255,0.16)"
+                                  : "rgba(17,24,39,0.08)",
                                 fontSize: 12,
                                 fontWeight: 700,
                                 textTransform: "uppercase",
                               }}
                             >
-                              Current
+                              {isPremium && activeInterval
+                                ? `Current · ${activeInterval}`
+                                : "Current"}
                             </div>
                           ) : null}
                         </Stack>
@@ -380,7 +468,9 @@ export default function Pricing() {
                           }}
                         >
                           <span style={{ fontSize: 40, fontWeight: 700 }}>
-                            {plan.key === "premium" ? `$${premiumPrice}` : plan.price}
+                            {isPremium
+                              ? formatPrice(prices[billingInterval])
+                              : plan.price}
                           </span>
                           <span
                             style={{
@@ -388,19 +478,36 @@ export default function Pricing() {
                               opacity: 0.86,
                             }}
                           >
-                            {plan.key === "premium" ? "/month" : "forever"}
+                            {isPremium ? INTERVAL_SUFFIX[billingInterval] : "forever"}
                           </span>
                         </div>
+                        {isPremium ? (
+                          <div
+                            style={{
+                              marginTop: 6,
+                              fontSize: 14,
+                              fontWeight: 600,
+                              color: "rgba(255,255,255,0.88)",
+                            }}
+                          >
+                            {billingInterval === "yearly"
+                              ? `${yearlyMonthlyEquivalent}/month, billed yearly${
+                                  discountLabel ? ` · ${discountLabel}` : ""
+                                }`
+                              : `or ${formatPrice(prices.yearly)}/year${
+                                  discountLabel ? ` · ${discountLabel}` : ""
+                                }`}
+                          </div>
+                        ) : null}
                         <p
                           style={{
                             marginTop: 12,
                             marginBottom: 0,
                             fontSize: 15,
                             lineHeight: 1.6,
-                            color:
-                              plan.key === "premium"
-                                ? "rgba(255,255,255,0.88)"
-                                : "#4b5563",
+                            color: isPremium
+                              ? "rgba(255,255,255,0.88)"
+                              : "#4b5563",
                           }}
                         >
                           {plan.description}
@@ -420,17 +527,17 @@ export default function Pricing() {
 
                         <div style={{ marginTop: 24 }}>
                           <Button
-                            primary={plan.key === "premium"}
-                            destructive={plan.key === "free" && activePlan === "premium"}
+                            primary={isPremium}
+                            destructive={!isPremium && activePlan === "premium"}
                             fullWidth
                             loading={isBusy}
                             disabled={isActive}
                             onClick={() => openConfirm(plan.key)}
                           >
-                            {isActive
-                              ? `${plan.name} active`
-                              : plan.key === "premium"
-                              ? `Upgrade to Premium`
+                            {isPremium
+                              ? premiumButtonLabel()
+                              : isActive
+                              ? "Free active"
                               : "Switch to Free"}
                           </Button>
                         </div>

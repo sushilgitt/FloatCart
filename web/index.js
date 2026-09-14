@@ -14,10 +14,16 @@ import { connectToMongoDB } from "./mongodb.js";
 import {
   FREE_PLAN,
   PREMIUM_PLAN,
+  PREMIUM_PLANS,
   PREMIUM_PLAN_KEY,
   PREMIUM_PRICE,
+  PREMIUM_YEARLY_PLAN,
+  PREMIUM_YEARLY_PRICE,
+  PREMIUM_YEARLY_DISCOUNT_PERCENT,
   PREMIUM_CURRENCY,
   IS_TEST,
+  planForInterval,
+  intervalForPlan,
 } from "./config/plans.js";
 
 dotenv.config();
@@ -197,14 +203,20 @@ app.get("/api/floating-cart/hasSubscription", async (req, res) => {
   }
 });
 
+// Returns the store's active Premium subscription (monthly or yearly), or null.
 // Lets errors (e.g. a 401) propagate so withFreshToken can retry on the embedded routes.
-async function checkPremium(session) {
-  const hasPremium = await shopify.api.billing.check({
+async function getPremiumSubscription(session) {
+  const { appSubscriptions = [] } = await shopify.api.billing.check({
     session,
-    plans: [PREMIUM_PLAN],
+    plans: PREMIUM_PLANS,
     isTest: IS_TEST,
+    returnObject: true,
   });
-  return hasPremium ? PREMIUM_PLAN : FREE_PLAN;
+  return appSubscriptions[0] || null;
+}
+
+async function checkPremium(session) {
+  return (await getPremiumSubscription(session)) ? PREMIUM_PLAN : FREE_PLAN;
 }
 
 app.post("/api/solnix-proxy/:event", async (req, res) => {
@@ -386,13 +398,19 @@ const isAuthFailure = (error) =>
 
 app.use("/api/*", wrapAsync(authViaTokenExchange));
 
-// Lightweight plan config for the admin UI so the displayed price always matches the
-// actual billing charge (the frontend previously hard-coded $15). No Admin API call.
+// Lightweight plan config for the admin UI so the displayed prices always match the
+// actual billing charges. No Admin API call.
 app.get("/api/plan-config", (_req, res) => {
   return res.status(HTTP_STATUS.OK).json({
     premiumPlan: PREMIUM_PLAN,
     price: PREMIUM_PRICE,
     currency: PREMIUM_CURRENCY,
+    monthly: { plan: PREMIUM_PLAN, price: PREMIUM_PRICE },
+    yearly: {
+      plan: PREMIUM_YEARLY_PLAN,
+      price: PREMIUM_YEARLY_PRICE,
+      discountPercent: PREMIUM_YEARLY_DISCOUNT_PERCENT,
+    },
   });
 });
 
@@ -427,26 +445,28 @@ const shopDetailsQuery = `
   }
 }`;
 
-app.get("/api/createSubscription", async (_req, res) => {
+app.get("/api/createSubscription", async (req, res) => {
   try {
-    const result = await withFreshToken(res, async (session) => {
-      const hasPayment = await shopify.api.billing.check({
-        session,
-        plans: [PREMIUM_PLAN],
-        isTest: IS_TEST,
-      });
+    // ?interval=yearly selects the annual plan; anything else is monthly.
+    const plan = planForInterval(req.query.interval);
+    const interval = intervalForPlan(plan);
 
-      if (hasPayment) {
-        return { isActiveSubscription: true, plan: PREMIUM_PLAN };
+    const result = await withFreshToken(res, async (session) => {
+      const active = await getPremiumSubscription(session);
+
+      if (active?.name === plan) {
+        return { isActiveSubscription: true, plan, interval };
       }
 
+      // Switching monthly <-> yearly needs no separate cancel: Shopify replaces the
+      // current subscription once the merchant approves the new charge.
       const confirmationUrl = await shopify.api.billing.request({
         session,
-        plan: PREMIUM_PLAN,
+        plan,
         isTest: IS_TEST,
       });
 
-      return { isActiveSubscription: false, plan: PREMIUM_PLAN, confirmationUrl };
+      return { isActiveSubscription: false, plan, interval, confirmationUrl };
     });
 
     return res.status(HTTP_STATUS.OK).send(result);
@@ -466,11 +486,7 @@ app.get("/api/createSubscription", async (_req, res) => {
 app.get("/api/cancelSubscription", async (_req, res) => {
   try {
     const result = await withFreshToken(res, async (session) => {
-      const hasPremium = await shopify.api.billing.check({
-        session,
-        plans: [PREMIUM_PLAN],
-        isTest: IS_TEST,
-      });
+      const hasPremium = Boolean(await getPremiumSubscription(session));
 
       if (!hasPremium) {
         return { status: "No subscription found" };
@@ -517,10 +533,9 @@ app.get("/api/cancelSubscription", async (_req, res) => {
 app.get("/api/hasActiveSubscription", async (_req, res) => {
   try {
     const result = await withFreshToken(res, async (session) => {
-      const tier = await checkPremium(session);
-      const hasActive = tier === PREMIUM_PLAN;
+      const subscription = await getPremiumSubscription(session);
 
-      if (!hasActive) {
+      if (!subscription) {
         return { hasActiveSubscription: false, tier: FREE_PLAN };
       }
 
@@ -554,7 +569,11 @@ app.get("/api/hasActiveSubscription", async (_req, res) => {
         }
       }
 
-      return { hasActiveSubscription: true, tier };
+      return {
+        hasActiveSubscription: true,
+        tier: PREMIUM_PLAN,
+        interval: intervalForPlan(subscription.name),
+      };
     });
 
     return res.status(HTTP_STATUS.OK).send(result);
