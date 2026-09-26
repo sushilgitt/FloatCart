@@ -17,9 +17,11 @@ export const PREMIUM_PRICE = parseNumber(
   process.env.SHOPIFY_PREMIUM_PRICE,
   30,
 );
+// Defaults to 10x the monthly price (two months free) so changing only the monthly
+// price can never leave the yearly plan costing more than 12 monthly payments.
 export const PREMIUM_YEARLY_PRICE = parseNumber(
   process.env.SHOPIFY_PREMIUM_YEARLY_PRICE,
-  300,
+  PREMIUM_PRICE * 10,
 );
 export const PREMIUM_CURRENCY =
   process.env.SHOPIFY_PREMIUM_CURRENCY || "USD";
@@ -33,7 +35,7 @@ export const IS_TEST =
 // Both billing intervals unlock the same Premium tier.
 export const PREMIUM_PLANS = [PREMIUM_PLAN, PREMIUM_YEARLY_PLAN];
 
-// Saving of yearly vs. 12 monthly payments ($300 vs $360 => 17%).
+// Saving of yearly vs. 12 monthly payments (10x vs 12x monthly => 17%).
 export const PREMIUM_YEARLY_DISCOUNT_PERCENT = Math.max(
   0,
   Math.round((1 - PREMIUM_YEARLY_PRICE / (PREMIUM_PRICE * 12)) * 100),

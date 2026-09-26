@@ -377,29 +377,20 @@ async function initFloatingCart() {
 }
 
 
-    } else if (plan === 'premium') {
-      if (priceEl2) priceEl2.style.display = 'none';
-      if (design2Btn) design2Btn.style.display = 'none';
-          if (poweredBy) {
-      poweredBy.style.display = 'none';
-      poweredBy.style.visibility = 'hidden';
-    }
-
-       if (floating_bar) {
-  floating_bar.style.borderTopLeftRadius = '8';
-  floating_bar.style.borderTopRightRadius = '8';
-}
-    } else if (plan === 'unlimited') {
+    } else if (plan === 'premium' || plan === 'unlimited') {
+      // Premium unlocks the Design 2 button and the cart total price (both advertised
+      // on the Pricing page); previously only the never-returned 'unlimited' plan did.
       if (priceEl2) priceEl2.style.display = 'block';
-      if (design2Btn) design2Btn.style.display = 'flex';
-        if (poweredBy) {
-      poweredBy.style.display = 'none';
-      poweredBy.style.visibility = 'hidden';
-    }
-           if (floating_bar) {
-  floating_bar.style.borderTopLeftRadius = '8';
-  floating_bar.style.borderTopRightRadius = '8';
-}
+      // Clear (not 'flex') so the "Enable Desktop Visibility" media rule still applies.
+      if (design2Btn) design2Btn.style.display = '';
+      if (poweredBy) {
+        poweredBy.style.display = 'none';
+        poweredBy.style.visibility = 'hidden';
+      }
+      if (floating_bar) {
+        floating_bar.style.borderTopLeftRadius = '8px';
+        floating_bar.style.borderTopRightRadius = '8px';
+      }
     }
 
     // Apply color settings

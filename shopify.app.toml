@@ -12,7 +12,7 @@ automatically_update_urls_on_dev = true
 api_version = "2026-07"
 
   [[webhooks.subscriptions]]
-  topics = [ "app_subscriptions/update" ]
+  topics = [ "app_subscriptions/update", "app/uninstalled" ]
   uri = "https://ezjxcaxfp8j4m9s210rcbfrv.91.239.208.85.sslip.io/api/webhooks"
 
   [[webhooks.subscriptions]]

@@ -87,6 +87,7 @@ export default function Pricing() {
   });
   const [banner, setBanner] = useState({ status: null, msg: "" });
   const [prices, setPrices] = useState(DEFAULT_PRICES);
+  const [pricesLoaded, setPricesLoaded] = useState(false);
 
   const activePlan = serverTier && serverTier !== "free" ? "premium" : "free";
   const premiumOnSelectedInterval =
@@ -111,6 +112,8 @@ export default function Pricing() {
       } catch (error) {
         // Non-fatal: keep the default prices shown on the card.
         console.error(error);
+      } finally {
+        setPricesLoaded(true);
       }
     })();
   }, []);
@@ -395,7 +398,7 @@ export default function Pricing() {
             return (
               <Layout.Section oneHalf key={plan.key}>
                 <Card sectioned>
-                  {loading.page ? (
+                  {loading.page || !pricesLoaded ? (
                     <SkeletonBodyText lines={8} />
                   ) : (
                     <div

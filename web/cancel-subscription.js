@@ -1,18 +1,5 @@
 import shopify from "./shopify.js";
 
-const RECURRING_PURCHASES_QUERY = `
-  query appSubscriptions {
-    currentAppInstallation {
-      activeSubscriptions {
-        id
-        name
-        test
-        status
-      }
-    }
-  }
-`;
-
 const CANCEL_SUBSCRIPTION = `
   mutation appSubscriptionCancel($id: ID!) {
     appSubscriptionCancel(id: $id) {
@@ -29,27 +16,12 @@ const CANCEL_SUBSCRIPTION = `
   }
 `;
 
-async function getActiveSubscriptionId(session) {
-  const client = new shopify.api.clients.Graphql({ session });
-  // @shopify/shopify-api v11: client.request(query) -> { data, errors, extensions }
-  const response = await client.request(RECURRING_PURCHASES_QUERY);
-  const subscriptions =
-    response?.data?.currentAppInstallation?.activeSubscriptions ?? [];
-  return subscriptions.length ? subscriptions[0].id : null;
-}
-
 /**
- * Cancels the store's active app subscription (if any).
- * @returns {Promise<string>} the cancelled subscription status, or
- *   "No subscription found" when there is nothing to cancel.
+ * Cancels the given app subscription. Callers pass the Premium subscription id from
+ * billing.check so we never cancel an unrelated (e.g. non-Premium) subscription.
+ * @returns {Promise<string>} the cancelled subscription status.
  */
-export default async function cancelSubscription(session) {
-  const subscriptionId = await getActiveSubscriptionId(session);
-
-  if (!subscriptionId) {
-    return "No subscription found";
-  }
-
+export default async function cancelSubscription(session, subscriptionId) {
   const client = new shopify.api.clients.Graphql({ session });
   const response = await client.request(CANCEL_SUBSCRIPTION, {
     variables: { id: subscriptionId },
